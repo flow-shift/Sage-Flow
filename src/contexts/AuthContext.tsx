@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = "https://sageflow-backend.onrender.com/api/auth";
 
 interface User {
   id: number;
