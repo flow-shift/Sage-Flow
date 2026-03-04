@@ -10,15 +10,18 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(cors({ origin: process.env.FRONTEND_URL || '*', credentials: true }));
 app.use(express.json());
-app.use(session({ secret: process.env.JWT_SECRET, resave: false, saveUninitialized: false }));
+app.use(session({ secret: process.env.JWT_SECRET || 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.get('/', (req, res) => res.json({ message: 'Sage Flow API' }));
 app.use('/api/auth', authRoutes);
 
 const PORT = process.env.PORT || 5000;
 
 initDB();
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+export default app;

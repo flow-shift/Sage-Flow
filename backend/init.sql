@@ -1,2 +1,24 @@
--- Run this in PostgreSQL to create the database
-CREATE DATABASE sageflow;
+-- PostgreSQL Schema
+CREATE TABLE IF NOT EXISTS users (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  password VARCHAR(255),
+  google_id VARCHAR(255),
+  verified BOOLEAN DEFAULT FALSE,
+  verification_token VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS devices (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  device_name VARCHAR(255),
+  browser VARCHAR(255),
+  os VARCHAR(255),
+  ip_address VARCHAR(50),
+  verification_token VARCHAR(255),
+  verified BOOLEAN DEFAULT FALSE,
+  last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

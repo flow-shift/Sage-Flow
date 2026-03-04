@@ -16,19 +16,23 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'your-googl
       const name = profile.displayName;
       const googleId = profile.id;
 
-      let user = db.prepare('SELECT * FROM users WHERE google_id = ?').get(googleId);
+      let result = await db.query('SELECT * FROM users WHERE google_id = $1', [googleId]);
+      let user = result.rows[0];
       
       if (!user) {
-        user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+        user = result.rows[0];
         
         if (!user) {
-          const result = db.prepare(
-            'INSERT INTO users (name, email, google_id, verified) VALUES (?, ?, ?, 1)'
-          ).run(name, email, googleId);
-          user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+          result = await db.query(
+            'INSERT INTO users (name, email, google_id, verified) VALUES ($1, $2, $3, $4) RETURNING *',
+            [name, email, googleId, true]
+          );
+          user = result.rows[0];
         } else {
-          db.prepare('UPDATE users SET google_id = ?, verified = 1 WHERE email = ?').run(googleId, email);
-          user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+          await db.query('UPDATE users SET google_id = $1, verified = $2 WHERE email = $3', [googleId, true, email]);
+          result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+          user = result.rows[0];
         }
       }
 
@@ -39,9 +43,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'your-googl
   }));
 
   passport.serializeUser((user, done) => done(null, user.id));
-  passport.deserializeUser((id, done) => {
+  passport.deserializeUser(async (id, done) => {
     try {
-      const user = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+      const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
+      const user = result.rows[0];
       done(null, user);
     } catch (error) {
       done(error, null);
