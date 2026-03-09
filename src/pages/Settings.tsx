@@ -246,7 +246,7 @@ const Settings = () => {
           <CardTitle className="flex items-center gap-2 text-lg">
             <SettingsIcon className="w-5 h-5" /> Change Password
           </CardTitle>
-          <CardDescription>Update your account password</CardDescription>
+          <CardDescription>Update your account password or reset it via email</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleChangePassword} className="space-y-4">
@@ -258,7 +258,12 @@ const Settings = () => {
               <Label htmlFor="new-password">New Password</Label>
               <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
             </div>
-            <Button type="submit">Update Password</Button>
+            <div className="flex gap-2">
+              <Button type="submit">Update Password</Button>
+              <Button type="button" variant="outline" onClick={() => navigate('/forgot-password')}>
+                Forgot Password?
+              </Button>
+            </div>
           </form>
         </CardContent>
       </Card>

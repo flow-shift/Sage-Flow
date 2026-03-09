@@ -25,6 +25,8 @@ export const initDB = async () => {
         google_id VARCHAR(255),
         verified BOOLEAN DEFAULT FALSE,
         verification_token VARCHAR(255),
+        reset_token VARCHAR(255),
+        reset_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -42,6 +44,11 @@ export const initDB = async () => {
         last_login TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
+    `);
+    
+    await pool.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP;
     `);
     
     console.log('✅ PostgreSQL database initialized');

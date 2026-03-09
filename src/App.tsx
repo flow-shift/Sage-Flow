@@ -9,6 +9,8 @@ import Login from "./pages/Login";
 import Signup from "./pages/signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import VerifyDevice from "./pages/VerifyDevice";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Overview from "./pages/Overview";
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/signup" element={<Signup />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/verify-device" element={<VerifyDevice />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Overview />} />

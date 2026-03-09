@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import UAParser from 'ua-parser-js';
 import { db } from '../config/db.js';
-import { sendVerificationEmail, sendDeviceVerificationEmail } from '../config/email.js';
+import { sendVerificationEmail, sendDeviceVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
 
 const getDeviceInfo = (req) => {
   const parser = new UAParser(req.headers['user-agent']);
@@ -138,4 +138,52 @@ export const googleAuth = async (req, res) => {
 
   const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
   res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}`);
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    const user = result.rows[0];
+    if (!user) return res.json({ message: 'If email exists, reset link sent' });
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetExpires = new Date(Date.now() + 3600000);
+
+    await db.query(
+      'UPDATE users SET reset_token = $1, reset_expires = $2 WHERE email = $3',
+      [resetToken, resetExpires, email]
+    );
+
+    await sendPasswordResetEmail(email, resetToken);
+
+    res.json({ message: 'If email exists, reset link sent' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body;
+
+    const result = await db.query(
+      'SELECT * FROM users WHERE reset_token = $1 AND reset_expires > NOW()',
+      [token]
+    );
+    const user = result.rows[0];
+    if (!user) return res.status(400).json({ error: 'Invalid or expired token' });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await db.query(
+      'UPDATE users SET password = $1, reset_token = NULL, reset_expires = NULL WHERE id = $2',
+      [hashedPassword, user.id]
+    );
+
+    res.json({ message: 'Password reset successful' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
