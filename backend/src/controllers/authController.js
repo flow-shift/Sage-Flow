@@ -50,7 +50,7 @@ export const login = async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // if (!user.verified) return res.status(403).json({ error: 'Please verify your email first' });
+    if (!user.verified) return res.status(403).json({ error: 'Please verify your email first' });
 
     const deviceInfo = getDeviceInfo(req);
     const deviceResult = await db.query(
