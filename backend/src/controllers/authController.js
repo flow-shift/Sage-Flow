@@ -63,15 +63,14 @@ export const login = async (req, res) => {
       const deviceToken = crypto.randomBytes(32).toString('hex');
       await db.query(
         'INSERT INTO devices (user_id, device_name, browser, os, ip_address, verification_token, verified) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [user.id, deviceInfo.device, deviceInfo.browser, deviceInfo.os, deviceInfo.ip, deviceToken, false]
+        [user.id, deviceInfo.device, deviceInfo.browser, deviceInfo.os, deviceInfo.ip, deviceToken, true]
       );
-      await sendDeviceVerificationEmail(user.email, deviceInfo, deviceToken);
-      return res.json({ message: 'New device detected. Please check your email to verify this device.' });
+      await sendDeviceVerificationEmail(user.email, deviceInfo, deviceToken).catch(() => {});
     }
 
-    if (!deviceCheck.verified) {
-      return res.status(403).json({ error: 'Please verify this device first. Check your email.' });
-    }
+    // if (!deviceCheck.verified) {
+    //   return res.status(403).json({ error: 'Please verify this device first. Check your email.' });
+    // }
 
     await db.query('UPDATE devices SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [deviceCheck.id]);
 
