@@ -15,7 +15,7 @@ const VerifyDevice = () => {
       return;
     }
 
-    fetch(`http://localhost:5000/api/auth/verify-device?token=${token}`)
+    fetch(`https://sageflow-backend.onrender.com/api/auth/verify-device?token=${token}`)
       .then(res => res.json())
       .then(() => setStatus("success"))
       .catch(() => setStatus("error"));

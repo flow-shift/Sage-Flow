@@ -15,7 +15,7 @@ const VerifyEmail = () => {
       return;
     }
 
-    fetch(`http://localhost:5000/api/auth/verify-email?token=${token}`)
+    fetch(`https://sageflow-backend.onrender.com/api/auth/verify-email?token=${token}`)
       .then(res => res.json())
       .then(() => setStatus("success"))
       .catch(() => setStatus("error"));
