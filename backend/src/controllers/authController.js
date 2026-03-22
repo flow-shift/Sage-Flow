@@ -137,7 +137,7 @@ export const googleAuth = async (req, res) => {
   }
 
   const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
-  res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/callback?token=${token}`);
+  res.redirect(`${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/auth/callback?token=${token}`);
 };
 
 export const forgotPassword = async (req, res) => {

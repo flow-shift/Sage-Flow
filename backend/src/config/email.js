@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendVerificationEmail = async (email, token) => {
-  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${token}`;
+  const verifyUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/verify-email?token=${token}`;
   
   await transporter.sendMail({
     from: `"Sage Flow" <${process.env.EMAIL_USER}>`,
@@ -30,7 +30,7 @@ export const sendVerificationEmail = async (email, token) => {
 };
 
 export const sendDeviceVerificationEmail = async (email, deviceInfo, token) => {
-  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-device?token=${token}`;
+  const verifyUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/verify-device?token=${token}`;
   
   await transporter.sendMail({
     from: `"Sage Flow Security" <${process.env.EMAIL_USER}>`,
@@ -53,7 +53,7 @@ export const sendDeviceVerificationEmail = async (email, deviceInfo, token) => {
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${token}`;
+  const resetUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/reset-password?token=${token}`;
   
   await transporter.sendMail({
     from: `"Sage Flow" <${process.env.EMAIL_USER}>`,
