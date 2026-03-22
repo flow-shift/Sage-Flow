@@ -1,28 +1,16 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: 465,
-  secure: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-transporter.verify((error) => {
-  if (error) console.error('❌ Email config error:', error.message);
-  else console.log('✅ Email transporter ready');
-});
+console.log('✅ Email transporter ready');
 
 export const sendVerificationEmail = async (email, token) => {
   const verifyUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/verify-email?token=${token}`;
-  
-  await transporter.sendMail({
-    from: `"Sage Flow" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Sage Flow <onboarding@resend.dev>',
     to: email,
     subject: 'Verify Your Sage Flow Account',
     html: `
@@ -36,9 +24,8 @@ export const sendVerificationEmail = async (email, token) => {
 
 export const sendDeviceVerificationEmail = async (email, deviceInfo, token) => {
   const verifyUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/verify-device?token=${token}`;
-  
-  await transporter.sendMail({
-    from: `"Sage Flow Security" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Sage Flow Security <onboarding@resend.dev>',
     to: email,
     subject: 'New Device Login - Sage Flow',
     html: `
@@ -59,9 +46,8 @@ export const sendDeviceVerificationEmail = async (email, deviceInfo, token) => {
 
 export const sendPasswordResetEmail = async (email, token) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/reset-password?token=${token}`;
-  
-  await transporter.sendMail({
-    from: `"Sage Flow" <${process.env.EMAIL_USER}>`,
+  await resend.emails.send({
+    from: 'Sage Flow <onboarding@resend.dev>',
     to: email,
     subject: 'Reset Your Password - Sage Flow',
     html: `
