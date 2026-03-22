@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Settings as SettingsIcon, Trash2, Save, User, Moon, Sun, Download, Upload } from "lucide-react";
+import { Settings as SettingsIcon, Trash2, User, Moon, Sun, Download, Upload } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,8 +25,6 @@ const Settings = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [name, setName] = useState(user?.name || "");
-  const [email, setEmail] = useState(user?.email || "");
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -83,55 +81,6 @@ const Settings = () => {
     reader.readAsText(file);
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name.trim() || !email.trim()) {
-      toast({ title: "Error", description: "Name and email are required", variant: "destructive" });
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const idx = users.findIndex((u: any) => u.email === user?.email);
-    if (idx === -1) return;
-
-    // Check if new email is taken by another user
-    if (email !== user?.email && users.find((u: any, i: number) => u.email === email && i !== idx)) {
-      toast({ title: "Error", description: "Email already in use", variant: "destructive" });
-      return;
-    }
-
-    users[idx].name = name.trim();
-    users[idx].email = email.trim();
-    localStorage.setItem("users", JSON.stringify(users));
-
-    const updated = { name: name.trim(), email: email.trim() };
-    localStorage.setItem("currentUser", JSON.stringify(updated));
-
-    // Force auth context update by reloading
-    window.location.reload();
-  };
-
-  const handleChangePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 6) {
-      toast({ title: "Error", description: "New password must be at least 6 characters", variant: "destructive" });
-      return;
-    }
-
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const idx = users.findIndex((u: any) => u.email === user?.email && u.password === currentPassword);
-    if (idx === -1) {
-      toast({ title: "Error", description: "Current password is incorrect", variant: "destructive" });
-      return;
-    }
-
-    users[idx].password = newPassword;
-    localStorage.setItem("users", JSON.stringify(users));
-    setCurrentPassword("");
-    setNewPassword("");
-    toast({ title: "Success", description: "Password updated successfully" });
-  };
-
   const handleDeleteAccount = () => {
     const users = JSON.parse(localStorage.getItem("users") || "[]");
     const filtered = users.filter((u: any) => u.email !== user?.email);
@@ -163,28 +112,23 @@ const Settings = () => {
         <p className="text-muted-foreground mt-1">Manage your profile and account.</p>
       </div>
 
-      {/* Edit Profile */}
+      {/* Profile */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <User className="w-5 h-5" /> Edit Profile
+            <User className="w-5 h-5" /> Profile
           </CardTitle>
-          <CardDescription>Update your name and email address</CardDescription>
+          <CardDescription>Your account information</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-            </div>
-            <Button type="submit">
-              <Save className="w-4 h-4 mr-2" /> Save Changes
-            </Button>
-          </form>
+        <CardContent className="space-y-4">
+          <div className="space-y-1">
+            <Label>Full Name</Label>
+            <p className="text-sm text-foreground bg-muted px-3 py-2 rounded-md">{user?.name}</p>
+          </div>
+          <div className="space-y-1">
+            <Label>Email</Label>
+            <p className="text-sm text-foreground bg-muted px-3 py-2 rounded-md">{user?.email}</p>
+          </div>
         </CardContent>
       </Card>
 
