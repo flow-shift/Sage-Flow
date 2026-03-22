@@ -50,7 +50,7 @@ export const login = async (req, res) => {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-    // if (!user.verified) return res.status(403).json({ error: 'Please verify your email first' });
+    if (!user.verified) return res.status(403).json({ error: 'Please verify your email first' });
 
     const deviceInfo = getDeviceInfo(req);
     const deviceResult = await db.query(
@@ -63,14 +63,15 @@ export const login = async (req, res) => {
       const deviceToken = crypto.randomBytes(32).toString('hex');
       await db.query(
         'INSERT INTO devices (user_id, device_name, browser, os, ip_address, verification_token, verified) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-        [user.id, deviceInfo.device, deviceInfo.browser, deviceInfo.os, deviceInfo.ip, deviceToken, true]
+        [user.id, deviceInfo.device, deviceInfo.browser, deviceInfo.os, deviceInfo.ip, deviceToken, false]
       );
-      await sendDeviceVerificationEmail(user.email, deviceInfo, deviceToken).catch(() => {});
+      await sendDeviceVerificationEmail(user.email, deviceInfo, deviceToken);
+      return res.json({ message: 'New device detected. Please check your email to verify this device.' });
     }
 
-    // if (!deviceCheck.verified) {
-    //   return res.status(403).json({ error: 'Please verify this device first. Check your email.' });
-    // }
+    if (!deviceCheck.verified) {
+      return res.status(403).json({ error: 'Please verify this device first. Check your email.' });
+    }
 
     await db.query('UPDATE devices SET last_login = CURRENT_TIMESTAMP WHERE id = $1', [deviceCheck.id]);
 
