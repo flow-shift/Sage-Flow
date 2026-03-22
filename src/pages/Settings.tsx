@@ -82,11 +82,6 @@ const Settings = () => {
   };
 
   const handleDeleteAccount = () => {
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const filtered = users.filter((u: any) => u.email !== user?.email);
-    localStorage.setItem("users", JSON.stringify(filtered));
-
-    // Clear all user data
     localStorage.removeItem("currentUser");
     localStorage.removeItem("tasks");
     localStorage.removeItem("studySubjects");
