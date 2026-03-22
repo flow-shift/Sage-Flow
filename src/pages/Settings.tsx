@@ -27,8 +27,6 @@ const Settings = () => {
 
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
   const [darkMode, setDarkMode] = useState(false);
 
   useEffect(() => {
@@ -246,25 +244,12 @@ const Settings = () => {
           <CardTitle className="flex items-center gap-2 text-lg">
             <SettingsIcon className="w-5 h-5" /> Change Password
           </CardTitle>
-          <CardDescription>Update your account password or reset it via email</CardDescription>
+          <CardDescription>Reset your password via email</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="current-password">Current Password</Label>
-              <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-            </div>
-            <div className="flex gap-2">
-              <Button type="submit">Update Password</Button>
-              <Button type="button" variant="outline" onClick={() => navigate('/forgot-password')}>
-                Forgot Password?
-              </Button>
-            </div>
-          </form>
+          <Button onClick={() => navigate('/forgot-password')} className="w-full">
+            Send Password Reset Link
+          </Button>
         </CardContent>
       </Card>
 
