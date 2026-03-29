@@ -192,6 +192,29 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+export const getUsers = async (req, res) => {
+  try {
+    const result = await db.query(`
+      SELECT u.id, u.name, u.email, u.verified, u.created_at,
+        json_agg(json_build_object(
+          'device', d.device_name,
+          'browser', d.browser,
+          'os', d.os,
+          'ip', d.ip_address,
+          'last_login', d.last_login,
+          'verified', d.verified
+        )) FILTER (WHERE d.id IS NOT NULL) as devices
+      FROM users u
+      LEFT JOIN devices d ON d.user_id = u.id
+      GROUP BY u.id
+      ORDER BY u.created_at DESC
+    `);
+    res.json({ users: result.rows });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const resetPassword = async (req, res) => {
   try {
     const { token, password } = req.body;
