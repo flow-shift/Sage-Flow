@@ -51,6 +51,14 @@ export const initDB = async () => {
       ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_expires TIMESTAMP;
     `);
     
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS otp_store (
+        email VARCHAR(255) PRIMARY KEY,
+        otp VARCHAR(6) NOT NULL,
+        expires_at TIMESTAMP NOT NULL
+      )
+    `);
+
     console.log('✅ PostgreSQL database initialized');
   } catch (error) {
     console.error('Database initialization error:', error);

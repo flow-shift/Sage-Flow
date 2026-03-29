@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import UAParser from 'ua-parser-js';
 import { db } from '../config/db.js';
-import { sendVerificationEmail, sendDeviceVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
+import { sendOtpEmail, sendDeviceVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
 
 const getDeviceInfo = (req) => {
   const parser = new UAParser(req.headers['user-agent']);
@@ -16,24 +16,52 @@ const getDeviceInfo = (req) => {
   };
 };
 
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const existing = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already exists' });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    // Store OTP temporarily
+    await db.query(
+      `INSERT INTO otp_store (email, otp, expires_at) VALUES ($1, $2, $3)
+       ON CONFLICT (email) DO UPDATE SET otp = $2, expires_at = $3`,
+      [email, otp, otpExpires]
+    );
+
+    await sendOtpEmail(email, otp);
+    res.json({ message: 'OTP sent to your email' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 export const signup = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    
+    const { name, email, password, otp } = req.body;
+
+    const otpResult = await db.query(
+      'SELECT * FROM otp_store WHERE email = $1 AND otp = $2 AND expires_at > NOW()',
+      [email, otp]
+    );
+    if (otpResult.rows.length === 0) return res.status(400).json({ error: 'Invalid or expired OTP' });
+
     const existing = await db.query('SELECT * FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) return res.status(400).json({ error: 'Email already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString('hex');
-
     await db.query(
-      'INSERT INTO users (name, email, password, verification_token, verified) VALUES ($1, $2, $3, $4, $5)',
-      [name, email, hashedPassword, verificationToken, false]
+      'INSERT INTO users (name, email, password, verified) VALUES ($1, $2, $3, $4)',
+      [name, email, hashedPassword, true]
     );
 
-    await sendVerificationEmail(email, verificationToken);
+    await db.query('DELETE FROM otp_store WHERE email = $1', [email]);
 
-    res.json({ message: 'Signup successful. Please check your email to verify your account.' });
+    res.json({ message: 'Account created successfully. You can now login.' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

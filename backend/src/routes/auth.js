@@ -1,6 +1,6 @@
 import express from 'express';
 import passport from '../config/passport.js';
-import { signup, login, verifyEmail, verifyDevice, googleAuth, forgotPassword, resetPassword } from '../controllers/authController.js';
+import { signup, login, sendOtp, verifyEmail, verifyDevice, googleAuth, forgotPassword, resetPassword } from '../controllers/authController.js';
 import { verifyToken } from '../middleware/auth.js';
 import dotenv from 'dotenv';
 
@@ -8,6 +8,7 @@ dotenv.config();
 
 const router = express.Router();
 
+router.post('/send-otp', sendOtp);
 router.post('/signup', signup);
 router.post('/login', login);
 router.get('/verify-email', verifyEmail);

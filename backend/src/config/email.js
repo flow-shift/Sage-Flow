@@ -22,6 +22,20 @@ export const sendVerificationEmail = async (email, token) => {
   });
 };
 
+export const sendOtpEmail = async (email, otp) => {
+  await resend.emails.send({
+    from: 'Sage Flow <onboarding@resend.dev>',
+    to: email,
+    subject: 'Your Sage Flow Verification Code',
+    html: `
+      <h2>Verify your email</h2>
+      <p>Your OTP code is:</p>
+      <h1 style="letter-spacing: 8px; font-size: 36px;">${otp}</h1>
+      <p>This code expires in 10 minutes. Do not share it with anyone.</p>
+    `
+  });
+};
+
 export const sendDeviceVerificationEmail = async (email, deviceInfo, token) => {
   const verifyUrl = `${process.env.FRONTEND_URL || 'https://sage-flow-gamma.vercel.app'}/verify-device?token=${token}`;
   await resend.emails.send({
