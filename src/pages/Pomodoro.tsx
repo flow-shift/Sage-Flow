@@ -1,9 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Play, Pause, RotateCcw, Settings, Coffee, Brain } from "lucide-react";
 
 type Mode = "work" | "shortBreak" | "longBreak";
@@ -14,13 +9,11 @@ const Pomodoro = () => {
   const [longBreakMin, setLongBreakMin] = useState(() => Number(localStorage.getItem("pomo_long") || 15));
   const [sessionsBeforeLong, setSessionsBeforeLong] = useState(() => Number(localStorage.getItem("pomo_sessions") || 4));
   const [autoStart, setAutoStart] = useState(() => localStorage.getItem("pomo_auto") === "true");
-
   const [mode, setMode] = useState<Mode>("work");
-  const [secondsLeft, setSecondsLeft] = useState(workMin * 60);
+  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
   const [isRunning, setIsRunning] = useState(false);
   const [completedSessions, setCompletedSessions] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const getDuration = useCallback((m: Mode) => {
@@ -38,17 +31,10 @@ const Pomodoro = () => {
   }, [workMin, shortBreakMin, longBreakMin, sessionsBeforeLong, autoStart]);
 
   useEffect(() => {
-    if (!isRunning) {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      return;
-    }
+    if (!isRunning) { if (intervalRef.current) clearInterval(intervalRef.current); return; }
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
-        if (s <= 1) {
-          clearInterval(intervalRef.current!);
-          handleSessionEnd();
-          return 0;
-        }
+        if (s <= 1) { clearInterval(intervalRef.current!); handleSessionEnd(); return 0; }
         return s - 1;
       });
     }, 1000);
@@ -60,8 +46,7 @@ const Pomodoro = () => {
     if (mode === "work") {
       const next = completedSessions + 1;
       setCompletedSessions(next);
-      const isLong = next % sessionsBeforeLong === 0;
-      const nextMode = isLong ? "longBreak" : "shortBreak";
+      const nextMode = next % sessionsBeforeLong === 0 ? "longBreak" : "shortBreak";
       setMode(nextMode);
       setSecondsLeft(getDuration(nextMode));
       if (autoStart) setTimeout(() => setIsRunning(true), 500);
@@ -72,16 +57,8 @@ const Pomodoro = () => {
     }
   };
 
-  const switchMode = (m: Mode) => {
-    setIsRunning(false);
-    setMode(m);
-    setSecondsLeft(getDuration(m));
-  };
-
-  const reset = () => {
-    setIsRunning(false);
-    setSecondsLeft(getDuration(mode));
-  };
+  const switchMode = (m: Mode) => { setIsRunning(false); setMode(m); setSecondsLeft(getDuration(m)); };
+  const reset = () => { setIsRunning(false); setSecondsLeft(getDuration(mode)); };
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
@@ -89,133 +66,99 @@ const Pomodoro = () => {
   const progress = ((total - secondsLeft) / total) * 100;
 
   const modeConfig = {
-    work: { label: "Focus", icon: Brain, color: "text-primary" },
-    shortBreak: { label: "Short Break", icon: Coffee, color: "text-chart-3" },
-    longBreak: { label: "Long Break", icon: Coffee, color: "text-chart-2" },
+    work: { label: "Focus", icon: Brain },
+    shortBreak: { label: "Short Break", icon: Coffee },
+    longBreak: { label: "Long Break", icon: Coffee },
   };
-
   const current = modeConfig[mode];
+
+  const sliderRow = (label: string, value: number, onChange: (v: number) => void, min: number, max: number, step: number) => (
+    <div className="space-y-2">
+      <div className="flex justify-between text-sm">
+        <span className="font-medium">{label}</span>
+        <span className="text-muted-foreground">{value} min</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-primary" />
+    </div>
+  );
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Pomodoro Timer</h1>
+        <h1 className="text-3xl font-bold">Pomodoro Timer</h1>
         <p className="text-muted-foreground mt-1">Stay focused with timed work sessions.</p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          {/* Mode tabs */}
-          <div className="flex gap-2 justify-center mb-8">
-            {(["work", "shortBreak", "longBreak"] as Mode[]).map((m) => (
-              <Button
-                key={m}
-                variant={mode === m ? "default" : "outline"}
-                size="sm"
-                onClick={() => switchMode(m)}
-              >
-                {modeConfig[m].label}
-              </Button>
-            ))}
-          </div>
+      <div className="border rounded-xl p-6 bg-card shadow-sm">
+        <div className="flex gap-2 justify-center mb-8">
+          {(["work", "shortBreak", "longBreak"] as Mode[]).map((m) => (
+            <button key={m} onClick={() => switchMode(m)} className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${mode === m ? "bg-primary text-primary-foreground" : "border hover:bg-muted"}`}>
+              {modeConfig[m].label}
+            </button>
+          ))}
+        </div>
 
-          {/* Timer display */}
-          <div className="flex flex-col items-center gap-6">
-            <div className="relative w-56 h-56 flex items-center justify-center">
-              <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 224 224">
-                <circle cx="112" cy="112" r="100" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
-                <circle
-                  cx="112" cy="112" r="100" fill="none"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 100}
-                  strokeDashoffset={2 * Math.PI * 100 * (1 - progress / 100)}
-                  className="transition-all duration-1000 ease-linear"
-                />
-              </svg>
-              <div className="text-center z-10">
-                <current.icon className={`w-6 h-6 mx-auto mb-1 ${current.color}`} />
-                <span className="text-5xl font-mono font-bold text-foreground">
-                  {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-                </span>
-                <p className="text-sm text-muted-foreground mt-1">{current.label}</p>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex items-center gap-3">
-              <Button size="icon" variant="outline" onClick={reset}>
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              <Button size="lg" onClick={() => setIsRunning(!isRunning)} className="px-8">
-                {isRunning ? <Pause className="w-5 h-5 mr-2" /> : <Play className="w-5 h-5 mr-2" />}
-                {isRunning ? "Pause" : "Start"}
-              </Button>
-              <Button size="icon" variant="outline" onClick={() => setShowSettings(!showSettings)}>
-                <Settings className="w-4 h-4" />
-              </Button>
-            </div>
-
-            {/* Session counter */}
-            <div className="flex items-center gap-2">
-              {Array.from({ length: sessionsBeforeLong }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-3 h-3 rounded-full transition-colors ${
-                    i < (completedSessions % sessionsBeforeLong) ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-              <span className="text-xs text-muted-foreground ml-2">
-                {completedSessions} sessions done
+        <div className="flex flex-col items-center gap-6">
+          <div className="relative w-56 h-56 flex items-center justify-center">
+            <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 224 224">
+              <circle cx="112" cy="112" r="100" fill="none" stroke="hsl(var(--muted))" strokeWidth="8" />
+              <circle cx="112" cy="112" r="100" fill="none" stroke="hsl(var(--primary))" strokeWidth="8" strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 100}
+                strokeDashoffset={2 * Math.PI * 100 * (1 - progress / 100)}
+                className="transition-all duration-1000 ease-linear"
+              />
+            </svg>
+            <div className="text-center z-10">
+              <current.icon className="w-6 h-6 mx-auto mb-1 text-primary" />
+              <span className="text-5xl font-mono font-bold">
+                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
               </span>
+              <p className="text-sm text-muted-foreground mt-1">{current.label}</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Settings */}
+          <div className="flex items-center gap-3">
+            <button onClick={reset} className="border rounded-lg p-2.5 hover:bg-muted transition-colors">
+              <RotateCcw className="w-4 h-4" />
+            </button>
+            <button onClick={() => setIsRunning(!isRunning)} className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-8 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+              {isRunning ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+              {isRunning ? "Pause" : "Start"}
+            </button>
+            <button onClick={() => setShowSettings(!showSettings)} className="border rounded-lg p-2.5 hover:bg-muted transition-colors">
+              <Settings className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {Array.from({ length: sessionsBeforeLong }).map((_, i) => (
+              <div key={i} className={`w-3 h-3 rounded-full transition-colors ${i < completedSessions % sessionsBeforeLong ? "bg-primary" : "bg-muted"}`} />
+            ))}
+            <span className="text-xs text-muted-foreground ml-2">{completedSessions} sessions done</span>
+          </div>
+        </div>
+      </div>
+
       {showSettings && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Timer Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label>Focus Duration</Label>
-                <span className="text-sm font-medium text-foreground">{workMin} min</span>
-              </div>
-              <Slider value={[workMin]} onValueChange={([v]) => { setWorkMin(v); if (mode === "work" && !isRunning) setSecondsLeft(v * 60); }} min={5} max={60} step={5} />
+        <div className="border rounded-xl p-5 bg-card shadow-sm space-y-5">
+          <p className="font-semibold">Timer Settings</p>
+          {sliderRow("Focus Duration", workMin, (v) => { setWorkMin(v); if (mode === "work" && !isRunning) setSecondsLeft(v * 60); }, 5, 60, 5)}
+          {sliderRow("Short Break", shortBreakMin, (v) => { setShortBreakMin(v); if (mode === "shortBreak" && !isRunning) setSecondsLeft(v * 60); }, 1, 15, 1)}
+          {sliderRow("Long Break", longBreakMin, (v) => { setLongBreakMin(v); if (mode === "longBreak" && !isRunning) setSecondsLeft(v * 60); }, 5, 30, 5)}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Sessions before long break</span>
+              <span className="text-muted-foreground">{sessionsBeforeLong}</span>
             </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label>Short Break</Label>
-                <span className="text-sm font-medium text-foreground">{shortBreakMin} min</span>
-              </div>
-              <Slider value={[shortBreakMin]} onValueChange={([v]) => { setShortBreakMin(v); if (mode === "shortBreak" && !isRunning) setSecondsLeft(v * 60); }} min={1} max={15} step={1} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label>Long Break</Label>
-                <span className="text-sm font-medium text-foreground">{longBreakMin} min</span>
-              </div>
-              <Slider value={[longBreakMin]} onValueChange={([v]) => { setLongBreakMin(v); if (mode === "longBreak" && !isRunning) setSecondsLeft(v * 60); }} min={5} max={30} step={5} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between">
-                <Label>Sessions before long break</Label>
-                <span className="text-sm font-medium text-foreground">{sessionsBeforeLong}</span>
-              </div>
-              <Slider value={[sessionsBeforeLong]} onValueChange={([v]) => setSessionsBeforeLong(v)} min={2} max={8} step={1} />
-            </div>
-            <div className="flex items-center justify-between">
-              <Label>Auto-start next session</Label>
-              <Switch checked={autoStart} onCheckedChange={setAutoStart} />
-            </div>
-          </CardContent>
-        </Card>
+            <input type="range" min={2} max={8} step={1} value={sessionsBeforeLong} onChange={(e) => setSessionsBeforeLong(Number(e.target.value))} className="w-full accent-primary" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium">Auto-start next session</span>
+            <button onClick={() => setAutoStart(!autoStart)} className={`relative w-11 h-6 rounded-full transition-colors ${autoStart ? "bg-primary" : "bg-muted-foreground/30"}`}>
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${autoStart ? "translate-x-5" : ""}`} />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
