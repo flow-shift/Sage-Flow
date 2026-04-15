@@ -1,21 +1,21 @@
+import { useState } from "react";
 import { HelpCircle } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface HelpTooltipProps {
-  content: string;
-}
+export const HelpTooltip = ({ content }: { content: string }) => {
+  const [visible, setVisible] = useState(false);
 
-export const HelpTooltip = ({ content }: HelpTooltipProps) => {
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help inline-block ml-1" />
-        </TooltipTrigger>
-        <TooltipContent className="max-w-xs">
-          <p className="text-sm">{content}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span className="relative inline-block ml-1">
+      <HelpCircle
+        className="w-4 h-4 text-muted-foreground cursor-help inline-block"
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+      />
+      {visible && (
+        <span className="absolute left-1/2 -translate-x-1/2 bottom-6 z-50 w-64 bg-popover text-popover-foreground text-xs rounded-lg px-3 py-2 shadow-lg border">
+          {content}
+        </span>
+      )}
+    </span>
   );
 };
