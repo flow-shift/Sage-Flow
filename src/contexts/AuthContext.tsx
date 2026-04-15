@@ -1,9 +1,19 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-
-const API_URL = "https://sageflow-backend.onrender.com/api/auth";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  signOut,
+  onAuthStateChanged,
+  updateProfile,
+  sendPasswordResetEmail as firebaseSendPasswordReset,
+  User as FirebaseUser,
+} from "firebase/auth";
+import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db, googleProvider } from "@/lib/firebase";
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
 }
@@ -12,7 +22,9 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
+  sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
 }
 
@@ -24,63 +36,82 @@ export const useAuth = () => {
   return ctx;
 };
 
+const toUser = (fb: FirebaseUser): User => ({
+  id: fb.uid,
+  email: fb.email || "",
+  name: fb.displayName || fb.email?.split("@")[0] || "User",
+});
+
+const saveUserToFirestore = async (fb: FirebaseUser) => {
+  const ref = doc(db, "users", fb.uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      name: fb.displayName || fb.email?.split("@")[0] || "User",
+      email: fb.email,
+      createdAt: serverTimestamp(),
+    });
+  }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const stored = localStorage.getItem("user");
-    if (token && stored) setUser(JSON.parse(stored));
-    setIsLoading(false);
+    const unsub = onAuthStateChanged(auth, (fb) => {
+      setUser(fb ? toUser(fb) : null);
+      setIsLoading(false);
+    });
+    return unsub;
   }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      const res = await fetch(`${API_URL}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) return { success: false, error: data.error };
-      
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      setUser(data.user);
+      await signInWithEmailAndPassword(auth, email, password);
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Network error" };
+    } catch (e: any) {
+      const msg = e.code === "auth/invalid-credential" ? "Invalid email or password" : e.message;
+      return { success: false, error: msg };
     }
   };
 
   const signup = async (name: string, email: string, password: string) => {
     try {
-      const res = await fetch(`${API_URL}/signup`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password })
-      });
-      const data = await res.json();
-      if (!res.ok) return { success: false, error: data.error };
-      
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      await saveUserToFirestore({ ...cred.user, displayName: name });
       return { success: true };
-    } catch (error) {
-      return { success: false, error: "Network error" };
+    } catch (e: any) {
+      const msg = e.code === "auth/email-already-in-use" ? "Email already in use" : e.message;
+      return { success: false, error: msg };
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+  const loginWithGoogle = async () => {
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      await saveUserToFirestore(cred.user);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const logout = () => signOut(auth);
+
+  const sendPasswordReset = async (email: string) => {
+    try {
+      await firebaseSendPasswordReset(auth, email);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout, sendPasswordReset, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-
