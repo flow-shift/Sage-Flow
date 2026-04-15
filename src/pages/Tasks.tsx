@@ -1,9 +1,4 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { HelpTooltip } from "@/components/HelpTooltip";
@@ -16,10 +11,10 @@ interface Task {
   createdAt: string;
 }
 
-const priorityColors: Record<string, string> = {
-  low: "bg-success/15 text-success",
-  medium: "bg-warning/15 text-warning",
-  high: "bg-destructive/15 text-destructive",
+const priorityStyles: Record<string, string> = {
+  low: "bg-green-100 text-green-700",
+  medium: "bg-yellow-100 text-yellow-700",
+  high: "bg-red-100 text-red-600",
 };
 
 const Tasks = () => {
@@ -40,13 +35,12 @@ const Tasks = () => {
 
   const addTask = () => {
     if (!title.trim()) return;
-    const newTask: Task = { id: Date.now().toString(), title: title.trim(), priority, completed: false, createdAt: new Date().toISOString() };
-    save([newTask, ...tasks]);
+    save([{ id: Date.now().toString(), title: title.trim(), priority, completed: false, createdAt: new Date().toISOString() }, ...tasks]);
     setTitle("");
     toast({ title: "Task added" });
   };
 
-  const toggleTask = (id: string) => save(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  const toggleTask = (id: string) => save(tasks.map((t) => t.id === id ? { ...t, completed: !t.completed } : t));
   const deleteTask = (id: string) => save(tasks.filter((t) => t.id !== id));
 
   const filtered = tasks.filter((t) => {
@@ -58,55 +52,71 @@ const Tasks = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">
-          Tasks
-          <HelpTooltip content="Create tasks with priority levels. Check them off when complete. Use filters to view active or completed tasks." />
+        <h1 className="text-3xl font-bold flex items-center gap-1">
+          Tasks <HelpTooltip content="Create tasks with priority levels. Check them off when complete." />
         </h1>
         <p className="text-muted-foreground mt-1">Manage your study tasks and to-dos.</p>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Input placeholder="Add a new task..." value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addTask()} className="flex-1" />
-            <div className="flex gap-3">
-              <Select value={priority} onValueChange={(v: any) => setPriority(v)}>
-                <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={addTask}><Plus className="w-4 h-4 mr-1" /> Add</Button>
-            </div>
+      <div className="border rounded-xl p-4 bg-card">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            placeholder="Add a new task..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addTask()}
+            className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+          />
+          <div className="flex gap-3">
+            <select
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as any)}
+              className="border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+            <button
+              onClick={addTask}
+              className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" /> Add
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <div className="flex gap-2">
         {(["all", "active", "completed"] as const).map((f) => (
-          <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="capitalize">
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium capitalize transition-colors ${filter === f ? "bg-primary text-primary-foreground" : "border hover:bg-muted"}`}
+          >
             {f}
-          </Button>
+          </button>
         ))}
       </div>
 
       <div className="space-y-2">
         {filtered.length === 0 && (
-          <Card><CardContent className="py-8 text-center text-muted-foreground">No tasks found. Add one above!</CardContent></Card>
+          <div className="border rounded-xl p-8 text-center text-muted-foreground bg-card">No tasks found. Add one above!</div>
         )}
         {filtered.map((task) => (
-          <Card key={task.id} className={task.completed ? "opacity-60" : ""}>
-            <CardContent className="py-3 flex items-center gap-3">
-              <Checkbox checked={task.completed} onCheckedChange={() => toggleTask(task.id)} />
-              <span className={`flex-1 text-sm ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}>{task.title}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[task.priority]}`}>{task.priority}</span>
-              <Button variant="ghost" size="icon" onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive">
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </CardContent>
-          </Card>
+          <div key={task.id} className={`border rounded-xl px-4 py-3 bg-card flex items-center gap-3 ${task.completed ? "opacity-60" : ""}`}>
+            <input
+              type="checkbox"
+              checked={task.completed}
+              onChange={() => toggleTask(task.id)}
+              className="w-4 h-4 accent-primary cursor-pointer"
+            />
+            <span className={`flex-1 text-sm ${task.completed ? "line-through text-muted-foreground" : ""}`}>{task.title}</span>
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityStyles[task.priority]}`}>{task.priority}</span>
+            <button onClick={() => deleteTask(task.id)} className="text-muted-foreground hover:text-destructive transition-colors">
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
         ))}
       </div>
     </div>
