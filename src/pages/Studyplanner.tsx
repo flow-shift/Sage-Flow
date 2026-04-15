@@ -1,60 +1,16 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
 import { format, differenceInDays, addDays, isToday, isBefore, startOfDay } from "date-fns";
 import { CalendarIcon, Plus, Trash2, GripVertical, RotateCcw, BookOpen, Clock, AlertTriangle, Printer } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { HelpTooltip } from "@/components/HelpTooltip";
 
-interface Topic {
-  id: string;
-  name: string;
-  hoursNeeded: number;
-}
+interface Topic { id: string; name: string; hoursNeeded: number; }
+interface Subject { id: string; name: string; topics: Topic[]; examDate: Date; color: string; }
+interface ScheduleEntry { id: string; subjectId: string; subjectName: string; topicId: string; topicName: string; date: string; hours: number; completed: boolean; color: string; }
 
-interface Subject {
-  id: string;
-  name: string;
-  topics: Topic[];
-  examDate: Date;
-  color: string;
-}
-
-interface ScheduleEntry {
-  id: string;
-  subjectId: string;
-  subjectName: string;
-  topicId: string;
-  topicName: string;
-  date: string; // ISO date string
-  hours: number;
-  completed: boolean;
-  color: string;
-}
-
-const SUBJECT_COLORS = [
-  "hsl(168, 70%, 38%)",
-  "hsl(262, 60%, 55%)",
-  "hsl(43, 96%, 56%)",
-  "hsl(200, 70%, 50%)",
-  "hsl(340, 65%, 55%)",
-  "hsl(25, 80%, 55%)",
-];
-
-const COLOR_CLASSES = [
-  "bg-primary/15 border-primary/30 text-primary",
-  "bg-chart-3/15 border-chart-3/30 text-chart-3",
-  "bg-accent/15 border-accent/30 text-accent-foreground",
-  "bg-chart-4/15 border-chart-4/30 text-chart-4",
-  "bg-chart-5/15 border-chart-5/30 text-chart-5",
-  "bg-warning/15 border-warning/30 text-warning",
-];
+const SUBJECT_COLORS = ["hsl(168,70%,38%)","hsl(262,60%,55%)","hsl(43,96%,56%)","hsl(200,70%,50%)","hsl(340,65%,55%)","hsl(25,80%,55%)"];
+const COLOR_CLASSES = ["bg-primary/15 border-primary/30 text-primary","bg-chart-3/15 border-chart-3/30 text-chart-3","bg-accent/15 border-accent/30 text-accent-foreground","bg-chart-4/15 border-chart-4/30 text-chart-4","bg-chart-5/15 border-chart-5/30 text-chart-5","bg-warning/15 border-warning/30 text-warning"];
 
 const StudyPlanner = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -64,7 +20,8 @@ const StudyPlanner = () => {
   const [newTopicName, setNewTopicName] = useState("");
   const [newTopicHours, setNewTopicHours] = useState("2");
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
-  const [examDate, setExamDate] = useState<Date>();
+  const [examDate, setExamDate] = useState("");
+  const [showCalendar, setShowCalendar] = useState(false);
   const [dragItem, setDragItem] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
   const { toast } = useToast();
@@ -89,164 +46,88 @@ const StudyPlanner = () => {
       toast({ title: "Missing info", description: "Enter subject name and exam date", variant: "destructive" });
       return;
     }
-    const sub: Subject = {
-      id: crypto.randomUUID(),
-      name: newSubject.trim(),
-      topics: [],
-      examDate,
-      color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length],
-    };
+    const sub: Subject = { id: crypto.randomUUID(), name: newSubject.trim(), topics: [], examDate: new Date(examDate), color: SUBJECT_COLORS[subjects.length % SUBJECT_COLORS.length] };
     const updated = [...subjects, sub];
-    setSubjects(updated);
-    save(updated, schedule, hoursPerDay);
-    setNewSubject("");
-    setExamDate(undefined);
-    toast({ title: "Subject added", description: `${sub.name} added with exam on ${format(sub.examDate, "PP")}` });
+    setSubjects(updated); save(updated, schedule, hoursPerDay);
+    setNewSubject(""); setExamDate("");
+    toast({ title: "Subject added" });
   };
 
   const removeSubject = (id: string) => {
     const updated = subjects.filter((s) => s.id !== id);
     const updatedSchedule = schedule.filter((e) => e.subjectId !== id);
-    setSubjects(updated);
-    setSchedule(updatedSchedule);
-    save(updated, updatedSchedule, hoursPerDay);
+    setSubjects(updated); setSchedule(updatedSchedule); save(updated, updatedSchedule, hoursPerDay);
   };
 
   const addTopic = (subjectId: string) => {
     if (!newTopicName.trim()) return;
     const topic: Topic = { id: crypto.randomUUID(), name: newTopicName.trim(), hoursNeeded: parseFloat(newTopicHours) || 2 };
     const updated = subjects.map((s) => s.id === subjectId ? { ...s, topics: [...s.topics, topic] } : s);
-    setSubjects(updated);
-    save(updated, schedule, hoursPerDay);
-    setNewTopicName("");
-    setNewTopicHours("2");
+    setSubjects(updated); save(updated, schedule, hoursPerDay);
+    setNewTopicName(""); setNewTopicHours("2");
   };
 
   const removeTopic = (subjectId: string, topicId: string) => {
     const updated = subjects.map((s) => s.id === subjectId ? { ...s, topics: s.topics.filter((t) => t.id !== topicId) } : s);
     const updatedSchedule = schedule.filter((e) => e.topicId !== topicId);
-    setSubjects(updated);
-    setSchedule(updatedSchedule);
-    save(updated, updatedSchedule, hoursPerDay);
+    setSubjects(updated); setSchedule(updatedSchedule); save(updated, updatedSchedule, hoursPerDay);
   };
 
   const generateSchedule = () => {
-    const allTopics = subjects.flatMap((s) =>
-      s.topics.map((t) => ({ ...t, subjectId: s.id, subjectName: s.name, examDate: s.examDate, color: s.color, colorIndex: subjects.indexOf(s) }))
-    );
-    if (allTopics.length === 0) {
-      toast({ title: "No topics", description: "Add subjects and topics first", variant: "destructive" });
-      return;
-    }
+    const allTopics = subjects.flatMap((s) => s.topics.map((t) => ({ ...t, subjectId: s.id, subjectName: s.name, examDate: s.examDate, color: s.color })));
+    if (!allTopics.length) { toast({ title: "No topics", description: "Add subjects and topics first", variant: "destructive" }); return; }
 
-    // Sort by exam date (earliest first)
     allTopics.sort((a, b) => a.examDate.getTime() - b.examDate.getTime());
-
     const entries: ScheduleEntry[] = [];
     const today = startOfDay(new Date());
     const dateHoursUsed: Record<string, number> = {};
-    const dateSubjectsUsed: Record<string, Set<string>> = {};
+    const topicRemainingHours = new Map(allTopics.map((t) => [t.id, t.hoursNeeded]));
+    let topicIndex = 0, currentDay = today, daysProcessed = 0;
 
-    // Round-robin distribution: cycle through topics to mix subjects daily
-    let topicIndex = 0;
-    let currentDay = today;
-    const maxDays = 365; // safety limit
-    let daysProcessed = 0;
-
-    // Track remaining hours for each topic
-    const topicRemainingHours = new Map(allTopics.map(t => [t.id, t.hoursNeeded]));
-
-    while (topicRemainingHours.size > 0 && daysProcessed < maxDays) {
+    while (topicRemainingHours.size > 0 && daysProcessed < 365) {
       const dateKey = format(currentDay, "yyyy-MM-dd");
       const usedHours = dateHoursUsed[dateKey] || 0;
-      
-      if (usedHours >= hoursPerDay) {
-        currentDay = addDays(currentDay, 1);
-        daysProcessed++;
-        continue;
-      }
+      if (usedHours >= hoursPerDay) { currentDay = addDays(currentDay, 1); daysProcessed++; continue; }
 
-      // Find next topic that still needs hours and hasn't passed exam date
-      let attempts = 0;
-      let foundTopic = false;
-      
+      let attempts = 0, foundTopic = false;
       while (attempts < allTopics.length && !foundTopic) {
         const topic = allTopics[topicIndex % allTopics.length];
         const remaining = topicRemainingHours.get(topic.id) || 0;
-        
         if (remaining > 0 && differenceInDays(currentDay, topic.examDate) < 0) {
-          const availableHours = hoursPerDay - usedHours;
-          const allocatedHours = Math.min(remaining, availableHours, 2); // max 2hrs per session
-          
-          entries.push({
-            id: crypto.randomUUID(),
-            subjectId: topic.subjectId,
-            subjectName: topic.subjectName,
-            topicId: topic.id,
-            topicName: topic.name,
-            date: dateKey,
-            hours: Math.round(allocatedHours * 10) / 10,
-            completed: false,
-            color: topic.color,
-          });
-          
-          dateHoursUsed[dateKey] = usedHours + allocatedHours;
-          const newRemaining = remaining - allocatedHours;
-          
-          if (newRemaining <= 0) {
-            topicRemainingHours.delete(topic.id);
-          } else {
-            topicRemainingHours.set(topic.id, newRemaining);
-          }
-          
+          const allocated = Math.min(remaining, hoursPerDay - usedHours, 2);
+          entries.push({ id: crypto.randomUUID(), subjectId: topic.subjectId, subjectName: topic.subjectName, topicId: topic.id, topicName: topic.name, date: dateKey, hours: Math.round(allocated * 10) / 10, completed: false, color: topic.color });
+          dateHoursUsed[dateKey] = usedHours + allocated;
+          const newRemaining = remaining - allocated;
+          if (newRemaining <= 0) topicRemainingHours.delete(topic.id);
+          else topicRemainingHours.set(topic.id, newRemaining);
           foundTopic = true;
         }
-        
-        topicIndex++;
-        attempts++;
+        topicIndex++; attempts++;
       }
-      
-      if (!foundTopic) {
-        currentDay = addDays(currentDay, 1);
-        daysProcessed++;
-      }
+      if (!foundTopic) { currentDay = addDays(currentDay, 1); daysProcessed++; }
     }
 
-    setSchedule(entries);
-    save(subjects, entries, hoursPerDay);
+    setSchedule(entries); save(subjects, entries, hoursPerDay);
     toast({ title: "Schedule generated!", description: `${entries.length} study sessions planned` });
   };
 
   const toggleCompleted = (entryId: string) => {
     const updated = schedule.map((e) => e.id === entryId ? { ...e, completed: !e.completed } : e);
-    setSchedule(updated);
-    save(subjects, updated, hoursPerDay);
-  };
-
-  const handlePrint = () => {
-    window.print();
+    setSchedule(updated); save(subjects, updated, hoursPerDay);
   };
 
   const rescheduleMissed = () => {
     const today = startOfDay(new Date());
     const missed = schedule.filter((e) => !e.completed && isBefore(new Date(e.date), today));
-    if (missed.length === 0) {
-      toast({ title: "No missed sessions", description: "You're all caught up!" });
-      return;
-    }
+    if (!missed.length) { toast({ title: "No missed sessions" }); return; }
 
     const dateHoursUsed: Record<string, number> = {};
     const kept = schedule.filter((e) => e.completed || !isBefore(new Date(e.date), today));
-    kept.forEach((e) => {
-      dateHoursUsed[e.date] = (dateHoursUsed[e.date] || 0) + e.hours;
-    });
+    kept.forEach((e) => { dateHoursUsed[e.date] = (dateHoursUsed[e.date] || 0) + e.hours; });
 
     const rescheduled: ScheduleEntry[] = [];
-    let currentDay = today;
-
     for (const entry of missed) {
-      let placed = false;
-      let tryDay = currentDay;
+      let placed = false, tryDay = today;
       for (let attempt = 0; attempt < 60 && !placed; attempt++) {
         const dateKey = format(tryDay, "yyyy-MM-dd");
         const used = dateHoursUsed[dateKey] || 0;
@@ -260,27 +141,10 @@ const StudyPlanner = () => {
     }
 
     const updated = [...kept, ...rescheduled];
-    setSchedule(updated);
-    save(subjects, updated, hoursPerDay);
-    toast({ title: "Rescheduled!", description: `${rescheduled.length} missed sessions moved forward` });
+    setSchedule(updated); save(subjects, updated, hoursPerDay);
+    toast({ title: "Rescheduled!", description: `${rescheduled.length} sessions moved forward` });
   };
 
-  // Drag & Drop
-  const handleDragStart = (entryId: string) => setDragItem(entryId);
-  const handleDragOver = (e: React.DragEvent, dateKey: string) => { e.preventDefault(); setDragOverDate(dateKey); };
-  const handleDragLeave = () => setDragOverDate(null);
-  const handleDrop = (e: React.DragEvent, targetDate: string) => {
-    e.preventDefault();
-    setDragOverDate(null);
-    if (!dragItem) return;
-
-    const updated = schedule.map((entry) => entry.id === dragItem ? { ...entry, date: targetDate } : entry);
-    setSchedule(updated);
-    save(subjects, updated, hoursPerDay);
-    setDragItem(null);
-  };
-
-  // Get upcoming 14 days for the timetable
   const today = startOfDay(new Date());
   const timetableDays = Array.from({ length: 14 }, (_, i) => {
     const date = addDays(today, i);
@@ -293,174 +157,137 @@ const StudyPlanner = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Study Planner
-            <HelpTooltip content="Add subjects with exam dates, then add topics. Click 'Generate Study Plan' to auto-create your schedule. Drag and drop sessions between days to reschedule. Click sessions to mark complete." />
+          <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-1">
+            Study Planner <HelpTooltip content="Add subjects with exam dates, then add topics. Click 'Generate Study Plan' to auto-create your schedule. Drag and drop sessions between days to reschedule." />
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm sm:text-base">Plan your study schedule across subjects and topics.</p>
+          <p className="text-muted-foreground mt-1 text-sm">Plan your study schedule across subjects and topics.</p>
         </div>
-        {missedCount > 0 && (
-          <Button onClick={rescheduleMissed} variant="outline" className="gap-2 w-full sm:w-auto">
-            <AlertTriangle className="w-4 h-4 text-warning" /> Reschedule {missedCount} missed
-          </Button>
-        )}
-        {schedule.length > 0 && (
-          <Button onClick={handlePrint} variant="outline" className="gap-2 w-full sm:w-auto">
-            <Printer className="w-4 h-4" /> Print Schedule
-          </Button>
-        )}
+        <div className="flex gap-2 flex-wrap">
+          {missedCount > 0 && (
+            <button onClick={rescheduleMissed} className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+              <AlertTriangle className="w-4 h-4 text-yellow-500" /> Reschedule {missedCount} missed
+            </button>
+          )}
+          {schedule.length > 0 && (
+            <button onClick={() => window.print()} className="flex items-center gap-2 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+              <Printer className="w-4 h-4" /> Print
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Add Subject */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Add Subject</CardTitle>
-          <CardDescription>Add a subject with its exam date, then add topics to it.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Input placeholder="Subject name (e.g. Mathematics)" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} className="flex-1" />
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full sm:w-[200px] justify-start text-left font-normal", !examDate && "text-muted-foreground")}>
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {examDate ? format(examDate, "PP") : "Exam date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={examDate} onSelect={setExamDate} disabled={(d) => isBefore(d, today)} initialFocus className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-            <Button onClick={addSubject} className="gap-2"><Plus className="w-4 h-4" /> Add</Button>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="border rounded-xl p-5 bg-card shadow-sm space-y-3">
+        <p className="font-semibold flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Add Subject</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input placeholder="Subject name (e.g. Mathematics)" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} min={format(today, "yyyy-MM-dd")} className="border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <button onClick={addSubject} className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+            <Plus className="w-4 h-4" /> Add
+          </button>
+        </div>
+      </div>
 
       {/* Subjects & Topics */}
       {subjects.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {subjects.map((sub) => (
-            <Card key={sub.id} className="border-l-4" style={{ borderLeftColor: sub.color }}>
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{sub.name}</CardTitle>
+            <div key={sub.id} className="border-l-4 border rounded-xl p-4 bg-card shadow-sm space-y-3" style={{ borderLeftColor: sub.color }}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-semibold">{sub.name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {format(sub.examDate, "PP")} · {differenceInDays(sub.examDate, today)} days · {sub.topics.length} topics
+                  </p>
+                </div>
+                <button onClick={() => removeSubject(sub.id)} className="text-muted-foreground hover:text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              {sub.topics.map((t) => (
+                <div key={t.id} className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-muted/50">
+                  <span className="text-sm">{t.name}</span>
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">{format(sub.examDate, "PP")}</Badge>
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => removeSubject(sub.id)}>
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
+                    <span className="text-xs text-muted-foreground">{t.hoursNeeded}h</span>
+                    <button onClick={() => removeTopic(sub.id, t.id)} className="text-muted-foreground hover:text-destructive">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground">{differenceInDays(sub.examDate, today)} days until exam · {sub.topics.length} topics</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {sub.topics.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between py-1.5 px-3 rounded-md bg-muted/50">
-                    <span className="text-sm">{t.name}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-muted-foreground">{t.hoursNeeded}h</span>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeTopic(sub.id, t.id)}>
-                        <Trash2 className="w-3 h-3 text-muted-foreground hover:text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                <div className="flex gap-2 pt-1">
-                  <Input placeholder="Topic name" value={selectedSubjectId === sub.id ? newTopicName : ""} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicName(e.target.value); }} className="flex-1 h-8 text-sm" onFocus={() => setSelectedSubjectId(sub.id)} />
-                  <Input type="number" placeholder="Hrs" value={selectedSubjectId === sub.id ? newTopicHours : "2"} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicHours(e.target.value); }} className="w-16 h-8 text-sm" onFocus={() => setSelectedSubjectId(sub.id)} />
-                  <Button size="sm" variant="secondary" className="h-8" onClick={() => addTopic(sub.id)}>
-                    <Plus className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <input placeholder="Topic name" value={selectedSubjectId === sub.id ? newTopicName : ""} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicName(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="flex-1 border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input type="number" placeholder="Hrs" value={selectedSubjectId === sub.id ? newTopicHours : "2"} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicHours(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="w-16 border rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <button onClick={() => addTopic(sub.id)} className="bg-muted border rounded-lg px-3 py-1.5 text-sm hover:bg-muted/80 transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
 
-      {/* Generate Schedule Controls */}
+      {/* Generate */}
       {subjects.some((s) => s.topics.length > 0) && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Label className="text-sm whitespace-nowrap"><Clock className="w-4 h-4 inline mr-1.5" />Study hours/day:</Label>
-                <Input type="number" min={1} max={12} value={hoursPerDay} onChange={(e) => { const v = parseInt(e.target.value) || 4; setHoursPerDay(v); save(subjects, schedule, v); }} className="w-20 h-9" />
-              </div>
-              <Button onClick={generateSchedule} className="gap-2 flex-1 sm:flex-none">
-                <RotateCcw className="w-4 h-4" /> Generate Study Plan
-              </Button>
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium whitespace-nowrap"><Clock className="w-4 h-4 inline mr-1" />Study hours/day:</label>
+              <input type="number" min={1} max={12} value={hoursPerDay} onChange={(e) => { const v = parseInt(e.target.value) || 4; setHoursPerDay(v); save(subjects, schedule, v); }} className="w-20 border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
-          </CardContent>
-        </Card>
+            <button onClick={generateSchedule} className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
+              <RotateCcw className="w-4 h-4" /> Generate Study Plan
+            </button>
+          </div>
+        </div>
       )}
 
-      {/* Timetable - Drag & Drop */}
+      {/* Timetable */}
       {schedule.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Daily Study Plan</CardTitle>
-            <CardDescription>Drag sessions between days to rearrange. Click to mark complete.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
-              {timetableDays.map(({ key, label, dayNum, date }) => {
-                const dayEntries = schedule.filter((e) => e.date === key);
-                const totalHours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
-                const isOverloaded = totalHours > hoursPerDay;
-
-                return (
-                  <div
-                    key={key}
-                    className={cn(
-                      "rounded-lg border p-2 min-h-[120px] transition-colors",
-                      isToday(date) && "border-primary/50 bg-primary/5",
-                      dragOverDate === key && "border-primary bg-primary/10",
-                      isOverloaded && "border-warning/50"
-                    )}
-                    onDragOver={(e) => handleDragOver(e, key)}
-                    onDragLeave={handleDragLeave}
-                    onDrop={(e) => handleDrop(e, key)}
-                  >
-                    <div className="text-center mb-2">
-                      <p className={cn("text-xs font-medium", isToday(date) ? "text-primary" : "text-muted-foreground")}>{label}</p>
-                      <p className="text-sm font-semibold">{dayNum}</p>
-                      {totalHours > 0 && (
-                        <p className={cn("text-[10px]", isOverloaded ? "text-warning" : "text-muted-foreground")}>{totalHours}h / {hoursPerDay}h</p>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      {dayEntries.map((entry) => {
-                        const colorClass = COLOR_CLASSES[subjects.findIndex((s) => s.id === entry.subjectId) % COLOR_CLASSES.length] || COLOR_CLASSES[0];
-                        return (
-                          <div
-                            key={entry.id}
-                            draggable
-                            onDragStart={() => handleDragStart(entry.id)}
-                            onClick={() => toggleCompleted(entry.id)}
-                            className={cn(
-                              "p-1.5 rounded border text-[11px] cursor-grab active:cursor-grabbing transition-all",
-                              colorClass,
-                              entry.completed && "opacity-50 line-through"
-                            )}
-                          >
-                            <div className="flex items-start gap-1">
-                              <GripVertical className="w-3 h-3 shrink-0 mt-0.5 opacity-40" />
-                              <div className="min-w-0">
-                                <p className="font-medium truncate">{entry.subjectName}</p>
-                                <p className="truncate opacity-75">{entry.topicName} · {entry.hours}h</p>
-                              </div>
+        <div className="border rounded-xl p-5 bg-card shadow-sm">
+          <p className="font-semibold mb-1">Daily Study Plan</p>
+          <p className="text-sm text-muted-foreground mb-4">Drag sessions between days to rearrange. Click to mark complete.</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
+            {timetableDays.map(({ key, label, dayNum, date }) => {
+              const dayEntries = schedule.filter((e) => e.date === key);
+              const totalHours = dayEntries.reduce((sum, e) => sum + e.hours, 0);
+              const isOverloaded = totalHours > hoursPerDay;
+              return (
+                <div
+                  key={key}
+                  className={cn("rounded-lg border p-2 min-h-[120px] transition-colors", isToday(date) && "border-primary/50 bg-primary/5", dragOverDate === key && "border-primary bg-primary/10", isOverloaded && "border-yellow-400/50")}
+                  onDragOver={(e) => { e.preventDefault(); setDragOverDate(key); }}
+                  onDragLeave={() => setDragOverDate(null)}
+                  onDrop={(e) => { e.preventDefault(); setDragOverDate(null); if (!dragItem) return; const updated = schedule.map((en) => en.id === dragItem ? { ...en, date: key } : en); setSchedule(updated); save(subjects, updated, hoursPerDay); setDragItem(null); }}
+                >
+                  <div className="text-center mb-2">
+                    <p className={cn("text-xs font-medium", isToday(date) ? "text-primary" : "text-muted-foreground")}>{label}</p>
+                    <p className="text-sm font-semibold">{dayNum}</p>
+                    {totalHours > 0 && <p className={cn("text-[10px]", isOverloaded ? "text-yellow-500" : "text-muted-foreground")}>{totalHours}h/{hoursPerDay}h</p>}
+                  </div>
+                  <div className="space-y-1.5">
+                    {dayEntries.map((entry) => {
+                      const colorClass = COLOR_CLASSES[subjects.findIndex((s) => s.id === entry.subjectId) % COLOR_CLASSES.length] || COLOR_CLASSES[0];
+                      return (
+                        <div key={entry.id} draggable onDragStart={() => setDragItem(entry.id)} onClick={() => toggleCompleted(entry.id)}
+                          className={cn("p-1.5 rounded border text-[11px] cursor-grab active:cursor-grabbing transition-all", colorClass, entry.completed && "opacity-50 line-through")}
+                        >
+                          <div className="flex items-start gap-1">
+                            <GripVertical className="w-3 h-3 shrink-0 mt-0.5 opacity-40" />
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{entry.subjectName}</p>
+                              <p className="truncate opacity-75">{entry.topicName} · {entry.hours}h</p>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </div>
   );
