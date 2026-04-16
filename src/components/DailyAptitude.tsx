@@ -72,8 +72,8 @@ Return ONLY valid JSON, no extra text:
       localStorage.setItem(STORAGE_KEY, JSON.stringify(q));
       setQuestion(q);
       setPopupOpen(true);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Gemini error:", e?.message, e?.code, e);
       setError(true);
       setPopupOpen(true);
     } finally {
