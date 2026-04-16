@@ -15,6 +15,8 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [done, setDone] = useState(false);
+
   if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,12 +29,28 @@ const Signup = () => {
     const result = await signup(name, email, password);
     setLoading(false);
     if (result.success) {
-      toast({ title: "Account created!", description: "Welcome to Sage Flow" });
-      navigate("/dashboard");
+      setDone(true);
     } else {
       toast({ title: "Signup failed", description: result.error, variant: "destructive" });
     }
   };
+
+  if (done) return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md border rounded-xl p-8 bg-card shadow-sm text-center space-y-4">
+        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h2 className="text-xl font-bold">Check your email</h2>
+        <p className="text-muted-foreground text-sm">We sent a verification link to <strong>{email}</strong>. Click the link to activate your account then log in.</p>
+        <Link to="/login" className="inline-block bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
+          Go to Login
+        </Link>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
