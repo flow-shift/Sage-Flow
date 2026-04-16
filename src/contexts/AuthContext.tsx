@@ -78,8 +78,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await saveUserToFirestore(cred.user);
       return { success: true };
     } catch (e: any) {
-      const msg = e.code === "auth/invalid-credential" ? "Invalid email or password" : e.message;
-      return { success: false, error: msg };
+      const errors: Record<string, string> = {
+        "auth/invalid-credential": "Invalid email or password.",
+        "auth/user-not-found": "No account found with this email. Please sign up first.",
+        "auth/wrong-password": "Incorrect password. Please try again.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/user-disabled": "This account has been disabled.",
+        "auth/too-many-requests": "Too many failed attempts. Please try again later.",
+      };
+      return { success: false, error: errors[e.code] || "Login failed. Please try again." };
     }
   };
 
@@ -92,8 +99,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       await signOut(auth);
       return { success: true };
     } catch (e: any) {
-      const msg = e.code === "auth/email-already-in-use" ? "Email already in use" : e.message;
-      return { success: false, error: msg };
+      const errors: Record<string, string> = {
+        "auth/email-already-in-use": "An account with this email already exists. Please login instead.",
+        "auth/invalid-email": "Please enter a valid email address.",
+        "auth/weak-password": "Password must be at least 6 characters.",
+        "auth/operation-not-allowed": "Email/password sign up is not enabled.",
+      };
+      return { success: false, error: errors[e.code] || "Signup failed. Please try again." };
     }
   };
 
