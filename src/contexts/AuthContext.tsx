@@ -74,6 +74,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await signOut(auth);
         return { success: false, error: "Please verify your email first. Check your inbox." };
       }
+      await saveUserToFirestore(cred.user);
       return { success: true };
     } catch (e: any) {
       const msg = e.code === "auth/invalid-credential" ? "Invalid email or password" : e.message;
