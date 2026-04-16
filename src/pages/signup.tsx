@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
-  const { user, signup, loginWithGoogle } = useAuth();
+  const { user, signup, signupWithGoogle } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -21,10 +21,10 @@ const Signup = () => {
 
   const handleGoogleSignup = async () => {
     setGoogleLoading(true);
-    const result = await loginWithGoogle();
+    const result = await signupWithGoogle();
     setGoogleLoading(false);
     if (result.success) navigate("/dashboard");
-    else toast({ title: "Google sign in failed", description: result.error, variant: "destructive" });
+    else toast({ title: "Google sign up failed", description: result.error, variant: "destructive" });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

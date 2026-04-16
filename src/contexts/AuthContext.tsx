@@ -24,6 +24,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  signupWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
@@ -99,6 +100,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithGoogle = async () => {
     try {
       const cred = await signInWithPopup(auth, googleProvider);
+      const ref = doc(db, "users", cred.user.uid);
+      const snap = await getDoc(ref);
+      if (!snap.exists()) {
+        await signOut(auth);
+        return { success: false, error: "No account found. Please sign up first." };
+      }
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
+  const signupWithGoogle = async () => {
+    try {
+      const cred = await signInWithPopup(auth, googleProvider);
+      const ref = doc(db, "users", cred.user.uid);
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        return { success: false, error: "Account already exists. Please login instead." };
+      }
       await saveUserToFirestore(cred.user);
       return { success: true };
     } catch (e: any) {
@@ -118,7 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, logout, sendPasswordReset, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, signupWithGoogle, logout, sendPasswordReset, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
