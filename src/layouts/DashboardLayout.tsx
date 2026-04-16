@@ -1,6 +1,7 @@
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { DashboardSidebar } from "@/components/DashboardSidebar";
+import { DailyAptitude } from "@/components/DailyAptitude";
 
 const backgrounds: Record<string, string> = {
   "/dashboard": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1600&q=80&fit=crop",
@@ -24,6 +25,7 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen flex bg-background">
+      <DailyAptitude />
       <DashboardSidebar />
       <main
         className="flex-1 p-4 pt-18 md:p-8 md:pt-8 overflow-auto relative"
