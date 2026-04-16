@@ -1,7 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { getAI, getGenerativeModel, GoogleAIBackend } from "firebase/ai";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -18,5 +17,26 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-const ai = getAI(app, { backend: new GoogleAIBackend() });
-export const gemini = getGenerativeModel(ai, { model: "gemini-2.0-flash" });
+// Direct Gemini API using dedicated API key — free tier: 15 req/min, 1500/day
+export const gemini = {
+  generateContent: async (prompt: string) => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+        }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err?.error?.message || `API error ${res.status}`);
+    }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    return { response: { text: () => text } };
+  },
+};
