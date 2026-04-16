@@ -21,7 +21,6 @@ export const DailyAptitude = () => {
   const [submitted, setSubmitted] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [answered, setAnswered] = useState(false);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(ANSWERED_KEY)) {
@@ -111,21 +110,15 @@ Return ONLY valid JSON, no extra text:
       {/* Persistent top banner — shown when popup is closed but not answered */}
       {!popupOpen && !answered && (
         <div
-          className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2 text-white text-sm font-semibold cursor-pointer md:left-64"
+          className="fixed top-14 md:top-0 left-0 md:left-64 right-0 z-40 flex items-center px-4 py-2.5 text-white text-sm font-semibold"
           style={{ background: "linear-gradient(90deg, #10b981, #059669)" }}
         >
           <button
             onClick={() => setPopupOpen(true)}
-            className="flex items-center gap-2 flex-1"
+            className="flex items-center gap-2 flex-1 text-left"
           >
-            <Sparkles className="w-4 h-4" />
-            <span>📝 Daily Aptitude — Click to answer today's challenge!</span>
-          </button>
-          <button
-            onClick={() => setBannerDismissed(true)}
-            className="ml-4 text-white/70 hover:text-white transition-colors"
-          >
-            {/* This X only hides the banner visually, not the aptitude */}
+            <Sparkles className="w-4 h-4 shrink-0" />
+            <span>📝 Daily Aptitude — Tap to answer today's challenge!</span>
           </button>
         </div>
       )}
@@ -133,7 +126,7 @@ Return ONLY valid JSON, no extra text:
       {/* Popup */}
       {popupOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
 
             {/* Header */}
             <div className="px-6 py-4 flex items-center justify-between"
@@ -159,7 +152,7 @@ Return ONLY valid JSON, no extra text:
             </div>
 
             {/* Body */}
-            <div className="p-6 space-y-5">
+            <div className="p-6 space-y-5 overflow-y-auto">
               {loading ? (
                 <div className="flex flex-col items-center gap-3 py-8">
                   <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
