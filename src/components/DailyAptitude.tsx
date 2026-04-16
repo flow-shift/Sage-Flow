@@ -163,18 +163,23 @@ Return ONLY valid JSON, no extra text:
                 </div>
               ) : error ? (
                 <div className="text-center py-6 space-y-4">
-                  <p className="text-gray-700 font-medium">⚠️ Firebase AI Logic not enabled</p>
-                  <p className="text-sm text-gray-500 leading-relaxed">
-                    To enable the Daily Aptitude feature, go to your
-                    <span className="font-semibold text-emerald-600"> Firebase Console</span> →
-                    Build → <span className="font-semibold">AI Logic</span> → Get started → Enable.
-                  </p>
-                  <button
-                    onClick={() => { setError(false); setPopupOpen(false); }}
-                    className="w-full border-2 border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
-                  >
-                    Close
-                  </button>
+                  <p className="text-4xl">😕</p>
+                  <p className="text-gray-700 font-semibold">Couldn't load today's question</p>
+                  <p className="text-sm text-gray-400">Please check your internet connection and try again.</p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => { setError(false); generateQuestion(); }}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-2.5 text-sm font-semibold transition-colors"
+                    >
+                      Try Again
+                    </button>
+                    <button
+                      onClick={() => { setError(false); setPopupOpen(false); }}
+                      className="flex-1 border-2 border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <>
