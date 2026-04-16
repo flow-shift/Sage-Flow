@@ -14,7 +14,6 @@ const Signup = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-
   const [done, setDone] = useState(false);
 
   if (user && !done) return <Navigate to="/dashboard" replace />;
@@ -28,101 +27,136 @@ const Signup = () => {
     setLoading(true);
     const result = await signup(name, email, password);
     setLoading(false);
-    if (result.success) {
-      setDone(true);
-    } else {
-      toast({ title: "Signup failed", description: result.error, variant: "destructive" });
-    }
+    if (result.success) setDone(true);
+    else toast({ title: "Signup failed", description: result.error, variant: "destructive" });
+  };
+
+  const inputStyle = {
+    background: "rgba(255,255,255,0.06)",
+    border: "1px solid rgba(255,255,255,0.08)",
   };
 
   if (done) return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md border rounded-xl p-8 bg-card shadow-sm text-center space-y-4">
-        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-          <svg className="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #0a0f1e 0%, #0d1b2a 40%, #0a1628 100%)" }}>
+      <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] rounded-full blur-[120px] opacity-30"
+        style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
+      <div className="w-full max-w-md relative z-10 text-center space-y-6">
+        <div className="rounded-2xl p-10 space-y-5"
+          style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto"
+            style={{ background: "rgba(16,185,129,0.15)", border: "2px solid rgba(16,185,129,0.4)" }}>
+            <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="#10b981">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-extrabold text-white" style={{ fontFamily: "'Sora', sans-serif" }}>Check your inbox</h2>
+          <p className="text-slate-400 text-sm leading-relaxed">
+            We sent a verification link to<br />
+            <span className="text-emerald-400 font-semibold">{email}</span><br />
+            Click the link to activate your account.
+          </p>
+          <Link to="/login"
+            className="inline-block w-full py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.01]"
+            style={{ background: "linear-gradient(135deg, #10b981, #059669)", boxShadow: "0 4px 20px rgba(16,185,129,0.35)", fontFamily: "'Sora', sans-serif" }}>
+            Go to Login →
+          </Link>
         </div>
-        <h2 className="text-xl font-bold">Check your email</h2>
-        <p className="text-muted-foreground text-sm">We sent a verification link to <strong>{email}</strong>. Click the link to activate your account then log in.</p>
-        <Link to="/login" className="inline-block bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-          Go to Login
-        </Link>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 mb-2">
-            <BookOpen className="w-7 h-7 text-primary" />
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
+      style={{ background: "linear-gradient(135deg, #0a0f1e 0%, #0d1b2a 40%, #0a1628 100%)" }}>
+
+      <div className="absolute top-[-150px] left-[-150px] w-[500px] h-[500px] rounded-full blur-[120px] opacity-30 animate-pulse"
+        style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
+      <div className="absolute bottom-[-150px] right-[-100px] w-[450px] h-[450px] rounded-full blur-[120px] opacity-25 animate-pulse"
+        style={{ background: "radial-gradient(circle, #818cf8 0%, transparent 70%)" }} />
+
+      <div className="w-full max-w-[420px] space-y-6 relative z-10">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+              <BookOpen className="w-5 h-5 text-white" />
+            </div>
+            <span className="text-white font-bold text-2xl" style={{ fontFamily: "'Sora', sans-serif" }}>Sage Flow</span>
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">Sage Flow</h1>
-          <p className="text-muted-foreground italic">Stay in touch</p>
         </div>
 
-        <div className="border rounded-xl p-6 bg-card shadow-sm space-y-5">
-          <div>
-            <h2 className="text-xl font-semibold">Create Account</h2>
-            <p className="text-sm text-muted-foreground mt-0.5">Fill in your details to sign up</p>
+        <div className="rounded-2xl p-8 space-y-5"
+          style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(24px)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 25px 50px rgba(0,0,0,0.4)" }}>
+
+          <div className="space-y-1">
+            <h2 className="text-3xl font-extrabold text-white" style={{ fontFamily: "'Sora', sans-serif" }}>Create Account</h2>
+            <p className="text-slate-400 text-sm">Join thousands of students studying smarter.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {[
+              { id: "name", label: "Full Name", type: "text", placeholder: "John Doe", value: name, onChange: setName },
+              { id: "email", label: "Email", type: "email", placeholder: "you@example.com", value: email, onChange: setEmail },
+            ].map(({ id, label, type, placeholder, value, onChange }) => (
+              <div key={id} className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{label}</label>
+                <input
+                  id={id}
+                  type={type}
+                  placeholder={placeholder}
+                  value={value}
+                  onChange={(e) => onChange(e.target.value)}
+                  required
+                  className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 outline-none transition-all duration-200"
+                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.border = "1px solid #10b981"; e.currentTarget.style.background = "rgba(16,185,129,0.05)"; }}
+                  onBlur={e => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+                />
+              </div>
+            ))}
+
             <div className="space-y-1.5">
-              <label htmlFor="name" className="text-sm font-medium">Full Name</label>
-              <input
-                id="name"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium">Email</label>
-              <input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium">Password</label>
+              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
               <div className="relative">
                 <input
-                  id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="At least 6 characters"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full border rounded-lg px-3 py-2 pr-10 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 outline-none transition-all duration-200"
+                  style={inputStyle}
+                  onFocus={e => { e.currentTarget.style.border = "1px solid #10b981"; e.currentTarget.style.background = "rgba(16,185,129,0.05)"; }}
+                  onBlur={e => { e.currentTarget.style.border = "1px solid rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
                 />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-300 transition-colors">
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
-            >
-              {loading ? "Creating account..." : "Create Account"}
+
+            <button type="submit" disabled={loading}
+              className="w-full py-3 rounded-xl text-sm font-bold text-white transition-all duration-200 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99]"
+              style={{ background: "linear-gradient(135deg, #10b981 0%, #059669 100%)", boxShadow: "0 4px 20px rgba(16,185,129,0.35)", fontFamily: "'Sora', sans-serif" }}>
+              {loading
+                ? <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Creating account...
+                  </span>
+                : "Create Account →"}
             </button>
           </form>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-sm text-slate-600">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">Sign in</Link>
+          <Link to="/login" className="font-semibold transition-colors" style={{ color: "#10b981" }}
+            onMouseEnter={e => (e.currentTarget.style.color = "#34d399")}
+            onMouseLeave={e => (e.currentTarget.style.color = "#10b981")}>
+            Login
+          </Link>
         </p>
       </div>
     </div>
