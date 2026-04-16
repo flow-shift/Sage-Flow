@@ -177,11 +177,11 @@ const StudyPlanner = () => {
       </div>
 
       {/* Add Subject */}
-      <div className="border rounded-xl p-5 bg-card shadow-sm space-y-3">
+      <div className="border rounded-xl p-5 bg-white dark:bg-card shadow-sm space-y-3">
         <p className="font-semibold flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Add Subject</p>
         <div className="flex flex-col sm:flex-row gap-3">
-          <input placeholder="Subject name (e.g. Mathematics)" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
-          <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} min={format(today, "yyyy-MM-dd")} className="border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <input placeholder="Subject name (e.g. Mathematics)" value={newSubject} onChange={(e) => setNewSubject(e.target.value)} className="flex-1 border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <input type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} min={format(today, "yyyy-MM-dd")} className="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
           <button onClick={addSubject} className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
             <Plus className="w-4 h-4" /> Add
           </button>
@@ -192,7 +192,7 @@ const StudyPlanner = () => {
       {subjects.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {subjects.map((sub) => (
-            <div key={sub.id} className="border-l-4 border rounded-xl p-4 bg-card shadow-sm space-y-3" style={{ borderLeftColor: sub.color }}>
+            <div key={sub.id} className="border-l-4 border rounded-xl p-4 bg-white dark:bg-card shadow-sm space-y-3" style={{ borderLeftColor: sub.color }}>
               <div className="flex items-start justify-between">
                 <div>
                   <p className="font-semibold">{sub.name}</p>
@@ -216,8 +216,8 @@ const StudyPlanner = () => {
                 </div>
               ))}
               <div className="flex gap-2 pt-1">
-                <input placeholder="Topic name" value={selectedSubjectId === sub.id ? newTopicName : ""} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicName(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="flex-1 border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
-                <input type="number" placeholder="Hrs" value={selectedSubjectId === sub.id ? newTopicHours : "2"} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicHours(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="w-16 border rounded-lg px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input placeholder="Topic name" value={selectedSubjectId === sub.id ? newTopicName : ""} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicName(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="flex-1 border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                <input type="number" placeholder="Hrs" value={selectedSubjectId === sub.id ? newTopicHours : "2"} onChange={(e) => { setSelectedSubjectId(sub.id); setNewTopicHours(e.target.value); }} onFocus={() => setSelectedSubjectId(sub.id)} className="w-16 border rounded-lg px-2 py-1.5 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
                 <button onClick={() => addTopic(sub.id)} className="bg-muted border rounded-lg px-3 py-1.5 text-sm hover:bg-muted/80 transition-colors">
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -229,11 +229,11 @@ const StudyPlanner = () => {
 
       {/* Generate */}
       {subjects.some((s) => s.topics.length > 0) && (
-        <div className="border rounded-xl p-5 bg-card shadow-sm">
+        <div className="border rounded-xl p-5 bg-white dark:bg-card shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium whitespace-nowrap"><Clock className="w-4 h-4 inline mr-1" />Study hours/day:</label>
-              <input type="number" min={1} max={12} value={hoursPerDay} onChange={(e) => { const v = parseInt(e.target.value) || 4; setHoursPerDay(v); save(subjects, schedule, v); }} className="w-20 border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <input type="number" min={1} max={12} value={hoursPerDay} onChange={(e) => { const v = parseInt(e.target.value) || 4; setHoursPerDay(v); save(subjects, schedule, v); }} className="w-20 border rounded-lg px-3 py-1.5 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <button onClick={generateSchedule} className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
               <RotateCcw className="w-4 h-4" /> Generate Study Plan
@@ -244,7 +244,7 @@ const StudyPlanner = () => {
 
       {/* Timetable */}
       {schedule.length > 0 && (
-        <div className="border rounded-xl p-5 bg-card shadow-sm">
+        <div className="border rounded-xl p-5 bg-white dark:bg-card shadow-sm">
           <p className="font-semibold mb-1">Daily Study Plan</p>
           <p className="text-sm text-muted-foreground mb-4">Drag sessions between days to rearrange. Click to mark complete.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">

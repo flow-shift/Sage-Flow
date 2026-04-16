@@ -98,19 +98,19 @@ const TestGenerator = () => {
       </div>
 
       {questions.length === 0 ? (
-        <div className="border rounded-xl p-5 bg-card shadow-sm space-y-4">
+        <div className="border rounded-xl p-5 bg-white dark:bg-card shadow-sm space-y-4">
           <p className="font-semibold flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> Input Paragraph</p>
           <textarea
             placeholder="Paste your study material here... (at least a few sentences)"
             value={paragraph}
             onChange={(e) => setParagraph(e.target.value)}
             rows={6}
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
           <div className="flex items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Number of questions</label>
-              <input type="number" min={1} max={20} value={numQuestions} onChange={(e) => setNumQuestions(Number(e.target.value))} className="w-24 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <input type="number" min={1} max={20} value={numQuestions} onChange={(e) => setNumQuestions(Number(e.target.value))} className="w-24 border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
             </div>
             <button onClick={handleGenerate} disabled={!paragraph.trim()} className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60">
               <Play className="w-4 h-4" /> Generate
@@ -131,7 +131,7 @@ const TestGenerator = () => {
           {questions.map((q, qi) => {
             const result = results.find((r) => r.questionId === q.id);
             return (
-              <div key={q.id} className={`border rounded-xl p-5 bg-card space-y-3 ${submitted ? (result?.correct ? "border-green-500/40" : "border-destructive/40") : ""}`}>
+              <div key={q.id} className={`border rounded-xl p-5 bg-white dark:bg-card space-y-3 ${submitted ? (result?.correct ? "border-green-500/40" : "border-destructive/40") : ""}`}>
                 <p className="font-medium">
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full mr-2 font-semibold">Q{qi + 1}</span>
                   {q.question}
