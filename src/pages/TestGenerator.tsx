@@ -21,45 +21,82 @@ const stopWords = new Set([
   "when","where","why","how","all","each","every","both","few","more","most","other","some","such","no",
   "not","only","same","so","than","too","very","just","because","but","and","or","if","while","that",
   "this","it","its","they","them","their","we","us","our","you","your","he","him","his","she","her",
-  "i","me","my","which","what","who","whom",
+  "i","me","my","which","what","who","whom","also","about","after","again","any","been","between",
 ]);
 
 function generateQuestions(text: string, count: number): Question[] {
-  const sentences = text.split(/[.!?]+/).map((s) => s.trim()).filter((s) => s.length > 40 && s.split(/\s+/).length >= 10);
+  // Split into sentences — relaxed filter (min 6 words)
+  const sentences = text
+    .split(/[.!?]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.split(/\s+/).length >= 6 && s.length > 20);
+
   if (!sentences.length) return [];
 
   const questions: Question[] = [];
-  const shuffled = sentences.map((s, i) => ({ s, i })).sort(() => Math.random() - 0.5);
+  const used = new Set<string>();
 
-  for (const { s } of shuffled) {
+  // Get all meaningful words from full text for distractors
+  const allWords = text
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, "")
+    .split(/\s+/)
+    .filter((w) => w.length >= 4 && !stopWords.has(w));
+  const uniqueWords = [...new Set(allWords)];
+
+  const shuffled = [...sentences].sort(() => Math.random() - 0.5);
+
+  for (const s of shuffled) {
     if (questions.length >= count) break;
-    const words = s.split(/\s+/);
-    if (words.length < 10) continue;
 
-    const candidates = words.filter((w, idx) =>
-      (w.length > 5 || /^[A-Z]/.test(w)) && !stopWords.has(w.toLowerCase().replace(/[^a-z]/g, "")) && idx > 2 && idx < words.length - 2
-    );
+    const words = s.split(/\s+/);
+
+    // Find candidate keywords — meaningful words not at start/end
+    const candidates = words.filter((w, idx) => {
+      const clean = w.replace(/[^a-zA-Z]/g, "").toLowerCase();
+      return (
+        clean.length >= 4 &&
+        idx > 0 &&
+        idx < words.length - 1 &&
+        !stopWords.has(clean) &&
+        !used.has(clean)
+      );
+    });
+
     if (!candidates.length) continue;
 
     const keyword = candidates[Math.floor(Math.random() * candidates.length)];
-    const cleanKeyword = keyword.replace(/[^a-zA-Z]/g, "");
-    if (cleanKeyword.length < 4) continue;
+    const cleanKeyword = keyword.replace(/[^a-zA-Z]/g, "").toLowerCase();
+    if (!cleanKeyword || used.has(cleanKeyword)) continue;
+    used.add(cleanKeyword);
 
-    const keywordIndex = words.findIndex((w) => w.includes(cleanKeyword));
-    const question = `${words.slice(0, keywordIndex).join(" ")} ______ ${words.slice(keywordIndex + 1).join(" ")}`;
+    const keywordIndex = words.findIndex((w) =>
+      w.replace(/[^a-zA-Z]/g, "").toLowerCase() === cleanKeyword
+    );
+    if (keywordIndex === -1) continue;
 
-    const allWords = text.toLowerCase().replace(/[^a-z\s]/g, "").split(/\s+/).filter((w) => w.length > 5 && !stopWords.has(w));
-    const uniqueWords = [...new Set(allWords)];
-    let distractors = uniqueWords.filter((w) => w !== cleanKeyword.toLowerCase() && Math.abs(w.length - cleanKeyword.length) <= 3).sort(() => Math.random() - 0.5).slice(0, 3);
+    const question =
+      words.slice(0, keywordIndex).join(" ") +
+      " ______ " +
+      words.slice(keywordIndex + 1).join(" ");
 
-    if (distractors.length < 3) {
-      const fallbacks = uniqueWords.filter((w) => w !== cleanKeyword.toLowerCase()).slice(0, 3);
-      if (fallbacks.length < 3) continue;
-      distractors = [...distractors, ...fallbacks].slice(0, 3);
-    }
+    // Build distractors — words of similar length
+    const distractors = uniqueWords
+      .filter(
+        (w) =>
+          w !== cleanKeyword &&
+          Math.abs(w.length - cleanKeyword.length) <= 4 &&
+          !stopWords.has(w)
+      )
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 3);
 
-    const options = [...distractors.slice(0, 3), cleanKeyword.toLowerCase()].sort(() => Math.random() - 0.5);
-    questions.push({ id: questions.length, question, options, correctIndex: options.indexOf(cleanKeyword.toLowerCase()) });
+    if (distractors.length < 3) continue;
+
+    const options = [...distractors, cleanKeyword].sort(() => Math.random() - 0.5);
+    const correctIndex = options.indexOf(cleanKeyword);
+
+    questions.push({ id: questions.length, question, options, correctIndex });
   }
 
   return questions;
@@ -72,15 +109,28 @@ const TestGenerator = () => {
   const [results, setResults] = useState<TestResult[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [selected, setSelected] = useState<Record<number, number>>({});
+  const [error, setError] = useState("");
 
   const handleGenerate = () => {
     if (!paragraph.trim()) return;
-    setQuestions(generateQuestions(paragraph, numQuestions));
-    setResults([]); setSubmitted(false); setSelected({});
+    setError("");
+    const qs = generateQuestions(paragraph, numQuestions);
+    if (qs.length === 0) {
+      setError("Could not generate questions. Please paste a longer paragraph with more descriptive sentences.");
+      return;
+    }
+    setQuestions(qs);
+    setResults([]);
+    setSubmitted(false);
+    setSelected({});
   };
 
   const handleSubmit = () => {
-    const res = questions.map((q) => ({ questionId: q.id, selectedIndex: selected[q.id] ?? null, correct: selected[q.id] === q.correctIndex }));
+    const res = questions.map((q) => ({
+      questionId: q.id,
+      selectedIndex: selected[q.id] ?? null,
+      correct: selected[q.id] === q.correctIndex,
+    }));
     setResults(res);
     setSubmitted(true);
     const scores = JSON.parse(localStorage.getItem("testScores") || "[]");
@@ -88,6 +138,7 @@ const TestGenerator = () => {
     localStorage.setItem("testScores", JSON.stringify(scores));
   };
 
+  const reset = () => { setQuestions([]); setResults([]); setSubmitted(false); setSelected({}); setError(""); };
   const score = results.filter((r) => r.correct).length;
 
   return (
@@ -99,20 +150,31 @@ const TestGenerator = () => {
 
       {questions.length === 0 ? (
         <div className="border rounded-xl p-5 bg-white dark:bg-card shadow-sm space-y-4">
-          <p className="font-semibold flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> Input Paragraph</p>
+          <p className="font-semibold flex items-center gap-2">
+            <FileText className="w-5 h-5 text-primary" /> Input Paragraph
+          </p>
           <textarea
-            placeholder="Paste your study material here... (at least a few sentences)"
+            placeholder="Paste your study material here... (paste at least 3-4 sentences for best results)"
             value={paragraph}
-            onChange={(e) => setParagraph(e.target.value)}
-            rows={6}
+            onChange={(e) => { setParagraph(e.target.value); setError(""); }}
+            rows={7}
             className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
+          {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="flex items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Number of questions</label>
-              <input type="number" min={1} max={20} value={numQuestions} onChange={(e) => setNumQuestions(Number(e.target.value))} className="w-24 border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50" />
+              <input
+                type="number" min={1} max={20} value={numQuestions}
+                onChange={(e) => setNumQuestions(Number(e.target.value))}
+                className="w-24 border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
             </div>
-            <button onClick={handleGenerate} disabled={!paragraph.trim()} className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60">
+            <button
+              onClick={handleGenerate}
+              disabled={!paragraph.trim()}
+              className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+            >
               <Play className="w-4 h-4" /> Generate
             </button>
           </div>
@@ -120,9 +182,11 @@ const TestGenerator = () => {
       ) : (
         <div className="space-y-4">
           {submitted && (
-            <div className="border border-primary/30 bg-primary/5 rounded-xl px-5 py-4 flex items-center justify-between">
-              <p className="text-lg font-semibold">Score: {score}/{questions.length} ({Math.round((score / questions.length) * 100)}%)</p>
-              <button onClick={() => { setQuestions([]); setResults([]); setSubmitted(false); setSelected({}); }} className="flex items-center gap-1 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+            <div className="border border-primary/30 bg-white dark:bg-card rounded-xl px-5 py-4 flex items-center justify-between shadow-sm">
+              <p className="text-lg font-semibold">
+                Score: {score}/{questions.length} ({Math.round((score / questions.length) * 100)}%)
+              </p>
+              <button onClick={reset} className="flex items-center gap-1 border rounded-lg px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
                 <RotateCcw className="w-4 h-4" /> New Test
               </button>
             </div>
@@ -131,7 +195,7 @@ const TestGenerator = () => {
           {questions.map((q, qi) => {
             const result = results.find((r) => r.questionId === q.id);
             return (
-              <div key={q.id} className={`border rounded-xl p-5 bg-white dark:bg-card space-y-3 ${submitted ? (result?.correct ? "border-green-500/40" : "border-destructive/40") : ""}`}>
+              <div key={q.id} className={`border rounded-xl p-5 bg-white dark:bg-card shadow-sm space-y-3 ${submitted ? (result?.correct ? "border-green-500/40" : "border-destructive/40") : ""}`}>
                 <p className="font-medium">
                   <span className="text-xs bg-muted px-2 py-0.5 rounded-full mr-2 font-semibold">Q{qi + 1}</span>
                   {q.question}
