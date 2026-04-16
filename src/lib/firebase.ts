@@ -19,4 +19,4 @@ export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
 const ai = getAI(app, { backend: new GoogleAIBackend() });
-export const gemini = getGenerativeModel(ai, { model: "gemini-1.5-flash" });
+export const gemini = getGenerativeModel(ai, { model: "gemini-2.0-flash" });
