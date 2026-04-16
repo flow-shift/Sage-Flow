@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'Aparajita';
+  src: local('Aparajita');
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
 @layer base {
@@ -104,11 +109,11 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Aparajita', 'Poppins', sans-serif;
   }
 
   h1, h2, h3 {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Aparajita', 'Poppins', sans-serif;
   }
 }
 
