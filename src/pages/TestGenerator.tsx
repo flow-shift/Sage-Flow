@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { FileText, Play, RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import { FileText, Play, RotateCcw, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { gemini } from "@/lib/firebase";
 
 interface Question {
   id: number;
@@ -14,94 +15,6 @@ interface TestResult {
   correct: boolean;
 }
 
-const stopWords = new Set([
-  "the","a","an","is","are","was","were","be","been","being","have","has","had","do","does","did",
-  "will","would","could","should","may","might","shall","can","to","of","in","for","on","with","at",
-  "by","from","as","into","through","before","after","out","over","under","then","once","here","there",
-  "when","where","why","how","all","each","every","both","few","more","most","other","some","such","no",
-  "not","only","same","so","than","too","very","just","because","but","and","or","if","while","that",
-  "this","it","its","they","them","their","we","us","our","you","your","he","him","his","she","her",
-  "i","me","my","which","what","who","whom","also","about","after","again","any","been","between",
-]);
-
-function generateQuestions(text: string, count: number): Question[] {
-  // Split into sentences — relaxed filter (min 6 words)
-  const sentences = text
-    .split(/[.!?]+/)
-    .map((s) => s.trim())
-    .filter((s) => s.split(/\s+/).length >= 6 && s.length > 20);
-
-  if (!sentences.length) return [];
-
-  const questions: Question[] = [];
-  const used = new Set<string>();
-
-  // Get all meaningful words from full text for distractors
-  const allWords = text
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, "")
-    .split(/\s+/)
-    .filter((w) => w.length >= 4 && !stopWords.has(w));
-  const uniqueWords = [...new Set(allWords)];
-
-  const shuffled = [...sentences].sort(() => Math.random() - 0.5);
-
-  for (const s of shuffled) {
-    if (questions.length >= count) break;
-
-    const words = s.split(/\s+/);
-
-    // Find candidate keywords — meaningful words not at start/end
-    const candidates = words.filter((w, idx) => {
-      const clean = w.replace(/[^a-zA-Z]/g, "").toLowerCase();
-      return (
-        clean.length >= 4 &&
-        idx > 0 &&
-        idx < words.length - 1 &&
-        !stopWords.has(clean) &&
-        !used.has(clean)
-      );
-    });
-
-    if (!candidates.length) continue;
-
-    const keyword = candidates[Math.floor(Math.random() * candidates.length)];
-    const cleanKeyword = keyword.replace(/[^a-zA-Z]/g, "").toLowerCase();
-    if (!cleanKeyword || used.has(cleanKeyword)) continue;
-    used.add(cleanKeyword);
-
-    const keywordIndex = words.findIndex((w) =>
-      w.replace(/[^a-zA-Z]/g, "").toLowerCase() === cleanKeyword
-    );
-    if (keywordIndex === -1) continue;
-
-    const question =
-      words.slice(0, keywordIndex).join(" ") +
-      " ______ " +
-      words.slice(keywordIndex + 1).join(" ");
-
-    // Build distractors — words of similar length
-    const distractors = uniqueWords
-      .filter(
-        (w) =>
-          w !== cleanKeyword &&
-          Math.abs(w.length - cleanKeyword.length) <= 4 &&
-          !stopWords.has(w)
-      )
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-
-    if (distractors.length < 3) continue;
-
-    const options = [...distractors, cleanKeyword].sort(() => Math.random() - 0.5);
-    const correctIndex = options.indexOf(cleanKeyword);
-
-    questions.push({ id: questions.length, question, options, correctIndex });
-  }
-
-  return questions;
-}
-
 const TestGenerator = () => {
   const [paragraph, setParagraph] = useState("");
   const [numQuestions, setNumQuestions] = useState(5);
@@ -109,20 +22,63 @@ const TestGenerator = () => {
   const [results, setResults] = useState<TestResult[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [selected, setSelected] = useState<Record<number, number>>({});
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     if (!paragraph.trim()) return;
+    setLoading(true);
     setError("");
-    const qs = generateQuestions(paragraph, numQuestions);
-    if (qs.length === 0) {
-      setError("Could not generate questions. Please paste a longer paragraph with more descriptive sentences.");
-      return;
+
+    try {
+      const prompt = `You are a quiz generator. Based on the following text, generate exactly ${numQuestions} multiple choice questions.
+
+Text:
+"""
+${paragraph}
+"""
+
+Rules:
+- Each question must be based strictly on the text above
+- Each question must have exactly 4 options (A, B, C, D)
+- Only one option is correct
+- Make wrong options plausible but clearly incorrect
+- Return ONLY a valid JSON array, no extra text, no markdown
+
+Format:
+[
+  {
+    "question": "question text here",
+    "options": ["option A", "option B", "option C", "option D"],
+    "correctIndex": 0
+  }
+]`;
+
+      const result = await gemini.generateContent(prompt);
+      const text = result.response.text().trim();
+
+      // Extract JSON from response
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("Invalid response format");
+
+      const parsed = JSON.parse(jsonMatch[0]);
+      const qs: Question[] = parsed.map((q: any, i: number) => ({
+        id: i,
+        question: q.question,
+        options: q.options,
+        correctIndex: q.correctIndex,
+      }));
+
+      setQuestions(qs);
+      setResults([]);
+      setSubmitted(false);
+      setSelected({});
+    } catch (e: any) {
+      setError("Failed to generate questions. Make sure Firebase AI Logic is enabled in your Firebase Console.");
+      console.error(e);
+    } finally {
+      setLoading(false);
     }
-    setQuestions(qs);
-    setResults([]);
-    setSubmitted(false);
-    setSelected({});
   };
 
   const handleSubmit = () => {
@@ -145,7 +101,7 @@ const TestGenerator = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">MCQ Test Generator</h1>
-        <p className="text-muted-foreground mt-1">Paste a paragraph to auto-generate fill-in-the-blank questions.</p>
+        <p className="text-muted-foreground mt-1">Paste your study material and AI will generate questions for you.</p>
       </div>
 
       {questions.length === 0 ? (
@@ -154,7 +110,7 @@ const TestGenerator = () => {
             <FileText className="w-5 h-5 text-primary" /> Input Paragraph
           </p>
           <textarea
-            placeholder="Paste your study material here... (paste at least 3-4 sentences for best results)"
+            placeholder="Paste your study material here..."
             value={paragraph}
             onChange={(e) => { setParagraph(e.target.value); setError(""); }}
             rows={7}
@@ -172,10 +128,10 @@ const TestGenerator = () => {
             </div>
             <button
               onClick={handleGenerate}
-              disabled={!paragraph.trim()}
-              className="flex items-center gap-1 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
+              disabled={!paragraph.trim() || loading}
+              className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
             >
-              <Play className="w-4 h-4" /> Generate
+              {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</> : <><Play className="w-4 h-4" /> Generate with AI</>}
             </button>
           </div>
         </div>
