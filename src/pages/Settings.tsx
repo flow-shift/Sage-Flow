@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
+
 import { useToast } from "@/hooks/use-toast";
-import { Settings as SettingsIcon, Trash2, User, Moon, Sun, Download, Upload } from "lucide-react";
+import { Trash2, User, Moon, Sun, Download, Upload } from "lucide-react";
 
 const Settings = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const { toast } = useToast();
   const [darkMode, setDarkMode] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -112,13 +111,6 @@ const Settings = () => {
           <Upload className="w-4 h-4" /> Import Data
           <input id="import-file" type="file" accept=".json" onChange={handleImportData} className="hidden" />
         </label>
-      </div>
-
-      <div className={section}>
-        <p className={sectionTitle}><SettingsIcon className="w-5 h-5" /> Change Password</p>
-        <button onClick={() => navigate("/forgot-password")} className="w-full bg-primary text-primary-foreground rounded-lg px-4 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors">
-          Send Password Reset Link
-        </button>
       </div>
 
       <div className="border border-destructive/30 rounded-xl p-5 bg-card shadow-sm space-y-4">
