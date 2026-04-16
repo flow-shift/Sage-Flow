@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { format, differenceInDays, addDays, isToday, isBefore, startOfDay } from "date-fns";
-import { Plus, Trash2, GripVertical, RotateCcw, BookOpen, Clock, AlertTriangle, Printer } from "lucide-react";
+import { Plus, Trash2, GripVertical, RotateCcw, BookOpen, Clock, AlertTriangle, Printer, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { HelpTooltip } from "@/components/HelpTooltip";
+import { gemini } from "@/lib/firebase";
 
 interface Topic { id: string; name: string; hoursNeeded: number; }
 interface Subject { id: string; name: string; topics: Topic[]; examDate: Date; color: string; }
@@ -22,6 +23,7 @@ const StudyPlanner = () => {
   const [topicInputs, setTopicInputs] = useState<Record<string, { name: string; hours: string }>>({});
   const [dragItem, setDragItem] = useState<string | null>(null);
   const [dragOverDate, setDragOverDate] = useState<string | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -83,22 +85,85 @@ const StudyPlanner = () => {
     setSubjects(updated); setSchedule(updatedSchedule); save(updated, updatedSchedule, hoursPerDay);
   };
 
-  const generateSchedule = () => {
-    const allTopics = subjects.flatMap((s) => s.topics.map((t) => ({ ...t, subjectId: s.id, subjectName: s.name, examDate: s.examDate, color: s.color })));
-    if (!allTopics.length) { toast({ title: "No topics", description: "Add subjects and topics first", variant: "destructive" }); return; }
+  const generateWithAI = async () => {
+    const allTopics = subjects.flatMap((s) => s.topics.map((t) => ({
+      subject: s.name,
+      topic: t.name,
+      examDate: format(s.examDate, "yyyy-MM-dd"),
+      daysLeft: differenceInDays(s.examDate, startOfDay(new Date())),
+    })));
 
+    if (!allTopics.length) {
+      toast({ title: "No topics", description: "Add subjects and topics first", variant: "destructive" });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const prompt = `You are a smart study planner. Given the following subjects, topics, and exam dates, suggest how many study hours each topic needs based on its complexity and urgency.
+
+Today's date: ${format(new Date(), "yyyy-MM-dd")}
+Study hours available per day: ${hoursPerDay}
+
+Topics:
+${allTopics.map((t) => `- Subject: ${t.subject}, Topic: ${t.topic}, Exam date: ${t.examDate}, Days left: ${t.daysLeft}`).join("\n")}
+
+Rules:
+- Assign more hours to complex/important topics
+- Assign more hours to topics with fewer days left
+- Hours per topic should be between 1 and 10
+- Return ONLY a valid JSON array, no extra text
+
+Format:
+[
+  { "subject": "subject name", "topic": "topic name", "hours": 3 }
+]`;
+
+      const result = await gemini.generateContent(prompt);
+      const text = result.response.text().trim();
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) throw new Error("Invalid response");
+
+      const suggestions: { subject: string; topic: string; hours: number }[] = JSON.parse(jsonMatch[0]);
+
+      // Apply AI suggestions to topics
+      const updated = subjects.map((s) => ({
+        ...s,
+        topics: s.topics.map((t) => {
+          const suggestion = suggestions.find(
+            (sg) => sg.subject.toLowerCase() === s.name.toLowerCase() &&
+                    sg.topic.toLowerCase() === t.name.toLowerCase()
+          );
+          return suggestion ? { ...t, hoursNeeded: suggestion.hours } : t;
+        }),
+      }));
+
+      setSubjects(updated);
+      save(updated, schedule, hoursPerDay);
+      toast({ title: "AI suggestions applied!", description: "Topic hours updated based on complexity and urgency" });
+
+      // Auto generate schedule after AI suggestions
+      generateScheduleFromSubjects(updated);
+    } catch (e: any) {
+      toast({ title: "AI failed", description: "Make sure Firebase AI Logic is enabled", variant: "destructive" });
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const generateScheduleFromSubjects = (subs: Subject[]) => {
+    const allTopics = subs.flatMap((s) => s.topics.map((t) => ({ ...t, subjectId: s.id, subjectName: s.name, examDate: s.examDate, color: s.color })));
+    if (!allTopics.length) return;
     allTopics.sort((a, b) => a.examDate.getTime() - b.examDate.getTime());
     const entries: ScheduleEntry[] = [];
     const today = startOfDay(new Date());
     const dateHoursUsed: Record<string, number> = {};
     const topicRemainingHours = new Map(allTopics.map((t) => [t.id, t.hoursNeeded]));
     let topicIndex = 0, currentDay = today, daysProcessed = 0;
-
     while (topicRemainingHours.size > 0 && daysProcessed < 365) {
       const dateKey = format(currentDay, "yyyy-MM-dd");
       const usedHours = dateHoursUsed[dateKey] || 0;
       if (usedHours >= hoursPerDay) { currentDay = addDays(currentDay, 1); daysProcessed++; continue; }
-
       let attempts = 0, foundTopic = false;
       while (attempts < allTopics.length && !foundTopic) {
         const topic = allTopics[topicIndex % allTopics.length];
@@ -116,10 +181,11 @@ const StudyPlanner = () => {
       }
       if (!foundTopic) { currentDay = addDays(currentDay, 1); daysProcessed++; }
     }
-
-    setSchedule(entries); save(subjects, entries, hoursPerDay);
-    toast({ title: "Schedule generated!", description: `${entries.length} study sessions planned` });
+    setSchedule(entries); save(subs, entries, hoursPerDay);
+    toast({ title: "Schedule generated!", description: `${entries.length} AI-optimized study sessions planned` });
   };
+
+  const generateSchedule = () => generateScheduleFromSubjects(subjects);
 
   const toggleCompleted = (entryId: string) => {
     const updated = schedule.map((e) => e.id === entryId ? { ...e, completed: !e.completed } : e);
@@ -274,6 +340,9 @@ const StudyPlanner = () => {
             </div>
             <button onClick={generateSchedule} className="flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors">
               <RotateCcw className="w-4 h-4" /> Generate Study Plan
+            </button>
+            <button onClick={generateWithAI} disabled={aiLoading} className="flex items-center gap-2 bg-emerald-600 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-60">
+              {aiLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> AI Planning...</> : <><Sparkles className="w-4 h-4" /> Generate with AI</>}
             </button>
           </div>
         </div>

@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CheckSquare, CalendarDays, Clock, FileCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { OnboardingTour } from "@/components/OnboardingTour";
+import { DailyAptitude } from "@/components/DailyAptitude";
 
 const Overview = () => {
   const { user } = useAuth();
@@ -45,6 +46,8 @@ const Overview = () => {
             </Link>
           ))}
         </div>
+
+        <DailyAptitude />
       </div>
     </>
   );

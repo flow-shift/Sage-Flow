@@ -6,10 +6,12 @@ const COLORS = ["hsl(168,70%,38%)", "hsl(43,96%,56%)", "hsl(262,60%,55%)", "hsl(
 const Analytics = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [studySchedule, setStudySchedule] = useState<any[]>([]);
+  const [aptitudeScores, setAptitudeScores] = useState<any[]>([]);
 
   useEffect(() => {
     setTasks(JSON.parse(localStorage.getItem("tasks") || "[]"));
     setStudySchedule(JSON.parse(localStorage.getItem("studySchedule") || "[]"));
+    setAptitudeScores(JSON.parse(localStorage.getItem("aptitudeScores") || "[]"));
   }, []);
 
   const completed = tasks.filter((t) => t.completed).length;
@@ -82,6 +84,22 @@ const Analytics = () => {
               </ResponsiveContainer>
             ) : <p className="text-center text-muted-foreground py-8">No study plan yet</p>}
           </div>
+
+          {aptitudeScores.length > 0 && (
+            <div className={`${card} lg:col-span-2`}>
+              <p className="font-medium mb-1">Daily Aptitude Performance</p>
+              <p className="text-xs text-muted-foreground mb-4">{aptitudeScores.filter((a) => a.correct).length} correct out of {aptitudeScores.length} attempts</p>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={aptitudeScores.slice(-14).map((a) => ({ date: a.date.slice(5), result: a.correct ? 1 : 0 }))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis allowDecimals={false} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => v === 1 ? "✓" : "✗"} tick={{ fontSize: 12 }} />
+                  <Tooltip formatter={(v) => v === 1 ? "Correct" : "Wrong"} />
+                  <Bar dataKey="result" fill={COLORS[2]} radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
     </div>
