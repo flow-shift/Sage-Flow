@@ -4,7 +4,34 @@
 
 @font-face {
   font-family: 'Aparajita';
-  src: local('Aparajita');
+  src: local('Aparajita'),
+       url('/fonts/aparaj.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aparajita';
+  src: local('Aparajita Bold'),
+       url('/fonts/aparajb.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aparajita';
+  src: local('Aparajita Italic'),
+       url('/fonts/aparaji.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Aparajita';
+  src: local('Aparajita Bold Italic'),
+       url('/fonts/aparajbi.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
