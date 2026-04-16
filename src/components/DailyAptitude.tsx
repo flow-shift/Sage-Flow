@@ -21,6 +21,7 @@ export const DailyAptitude = () => {
   const [submitted, setSubmitted] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [answered, setAnswered] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(ANSWERED_KEY)) {
@@ -73,6 +74,8 @@ Return ONLY valid JSON, no extra text:
       setPopupOpen(true);
     } catch (e) {
       console.error(e);
+      setError(true);
+      setPopupOpen(true);
     } finally {
       setLoading(false);
     }
@@ -158,9 +161,20 @@ Return ONLY valid JSON, no extra text:
                   <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
                   <p className="text-sm text-gray-500">Generating today's question with AI...</p>
                 </div>
-              ) : !question ? (
-                <div className="text-center py-8 text-gray-500 text-sm">
-                  Failed to load question. Please try again later.
+              ) : error ? (
+                <div className="text-center py-6 space-y-4">
+                  <p className="text-gray-700 font-medium">⚠️ Firebase AI Logic not enabled</p>
+                  <p className="text-sm text-gray-500 leading-relaxed">
+                    To enable the Daily Aptitude feature, go to your
+                    <span className="font-semibold text-emerald-600"> Firebase Console</span> →
+                    Build → <span className="font-semibold">AI Logic</span> → Get started → Enable.
+                  </p>
+                  <button
+                    onClick={() => { setError(false); setPopupOpen(false); }}
+                    className="w-full border-2 border-gray-200 rounded-xl py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    Close
+                  </button>
                 </div>
               ) : (
                 <>
