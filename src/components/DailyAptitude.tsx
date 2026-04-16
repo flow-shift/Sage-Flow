@@ -19,21 +19,22 @@ export const DailyAptitude = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
-  const [visible, setVisible] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [answered, setAnswered] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
-    // Already answered today — don't show
     if (localStorage.getItem(ANSWERED_KEY)) {
+      setAnswered(true);
       setLoading(false);
       return;
     }
 
-    // Use cached question for today
     const cached = localStorage.getItem(STORAGE_KEY);
     if (cached) {
       setQuestion(JSON.parse(cached));
       setLoading(false);
-      setVisible(true);
+      setPopupOpen(true);
       return;
     }
 
@@ -70,7 +71,7 @@ Return ONLY valid JSON, no extra text:
       const q: AptitudeQuestion = JSON.parse(jsonMatch[0]);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(q));
       setQuestion(q);
-      setVisible(true);
+      setPopupOpen(true);
     } catch (e) {
       console.error(e);
     } finally {
@@ -91,107 +92,142 @@ Return ONLY valid JSON, no extra text:
     localStorage.setItem("aptitudeScores", JSON.stringify(scores));
     localStorage.setItem(ANSWERED_KEY, "true");
 
-    // Close popup after 3 seconds
-    setTimeout(() => setVisible(false), 3000);
+    setTimeout(() => {
+      setPopupOpen(false);
+      setAnswered(true);
+    }, 3000);
   };
 
-  const handleSkip = () => {
-    setVisible(false);
-  };
+  // Already answered — show nothing
+  if (answered) return null;
 
-  if (!visible) return null;
+  // Still loading and no question yet — show nothing
+  if (loading && !question) return null;
 
   const isCorrect = submitted && selected === question?.correctIndex;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
-
-        {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <p className="font-bold text-white text-base">Daily Aptitude Challenge</p>
-              <p className="text-emerald-100 text-xs">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
-            </div>
-          </div>
-          {!submitted && (
-            <button onClick={handleSkip} className="text-white/70 hover:text-white transition-colors">
-              <X className="w-5 h-5" />
-            </button>
-          )}
+    <>
+      {/* Persistent top banner — shown when popup is closed but not answered */}
+      {!popupOpen && !answered && (
+        <div
+          className="fixed top-0 left-0 right-0 z-40 flex items-center justify-between px-4 py-2 text-white text-sm font-semibold cursor-pointer md:left-64"
+          style={{ background: "linear-gradient(90deg, #10b981, #059669)" }}
+        >
+          <button
+            onClick={() => setPopupOpen(true)}
+            className="flex items-center gap-2 flex-1"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>📝 Daily Aptitude — Click to answer today's challenge!</span>
+          </button>
+          <button
+            onClick={() => setBannerDismissed(true)}
+            className="ml-4 text-white/70 hover:text-white transition-colors"
+          >
+            {/* This X only hides the banner visually, not the aptitude */}
+          </button>
         </div>
+      )}
 
-        {/* Body */}
-        <div className="p-6 space-y-5">
-          {loading ? (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
-              <p className="text-sm text-gray-500">Generating today's question with AI...</p>
-            </div>
-          ) : !question ? (
-            <div className="text-center py-8 text-gray-500 text-sm">
-              Failed to load question. Please try again later.
-            </div>
-          ) : (
-            <>
-              {submitted && (
-                <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${isCorrect ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
-                  {isCorrect
-                    ? <><CheckCircle2 className="w-4 h-4" /> Correct! Well done!</>
-                    : <><XCircle className="w-4 h-4" /> Wrong answer</>}
+      {/* Popup */}
+      {popupOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden">
+
+            {/* Header */}
+            <div className="px-6 py-4 flex items-center justify-between"
+              style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <Sparkles className="w-5 h-5 text-white" />
                 </div>
-              )}
-
-              <p className="font-semibold text-gray-800 leading-relaxed">{question.question}</p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                {question.options.map((opt, i) => {
-                  let cls = "border-2 rounded-xl px-4 py-3 text-sm text-left transition-all flex items-center gap-2.5 ";
-                  if (submitted) {
-                    if (i === question.correctIndex) cls += "bg-green-50 border-green-400 text-green-800 font-medium";
-                    else if (i === selected) cls += "bg-red-50 border-red-400 text-red-700";
-                    else cls += "border-gray-100 text-gray-400";
-                  } else {
-                    cls += selected === i
-                      ? "bg-emerald-50 border-emerald-500 text-emerald-800 font-medium"
-                      : "border-gray-200 text-gray-700 hover:border-emerald-300 hover:bg-emerald-50/50 cursor-pointer";
-                  }
-                  return (
-                    <button key={i} className={cls} onClick={() => !submitted && setSelected(i)}>
-                      <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold shrink-0">
-                        {String.fromCharCode(65 + i)}
-                      </span>
-                      {opt}
-                      {submitted && i === question.correctIndex && <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto shrink-0" />}
-                      {submitted && i === selected && i !== question.correctIndex && <XCircle className="w-4 h-4 text-red-500 ml-auto shrink-0" />}
-                    </button>
-                  );
-                })}
+                <div>
+                  <p className="font-bold text-white text-base">Daily Aptitude Challenge</p>
+                  <p className="text-emerald-100 text-xs">{format(new Date(), "EEEE, MMMM d, yyyy")}</p>
+                </div>
               </div>
-
-              {submitted && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
-                  <span className="font-semibold">💡 Explanation: </span>{question.explanation}
-                </div>
-              )}
-
               {!submitted && (
                 <button
-                  onClick={handleSubmit}
-                  disabled={selected === null}
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl py-3 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPopupOpen(false)}
+                  className="text-white/70 hover:text-white transition-colors"
+                  title="Close — banner will remind you"
                 >
-                  Submit Answer
+                  <X className="w-5 h-5" />
                 </button>
               )}
-            </>
-          )}
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-5">
+              {loading ? (
+                <div className="flex flex-col items-center gap-3 py-8">
+                  <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+                  <p className="text-sm text-gray-500">Generating today's question with AI...</p>
+                </div>
+              ) : !question ? (
+                <div className="text-center py-8 text-gray-500 text-sm">
+                  Failed to load question. Please try again later.
+                </div>
+              ) : (
+                <>
+                  {submitted && (
+                    <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold ${isCorrect ? "bg-green-50 text-green-700 border border-green-200" : "bg-red-50 text-red-700 border border-red-200"}`}>
+                      {isCorrect
+                        ? <><CheckCircle2 className="w-4 h-4" /> Correct! Well done!</>
+                        : <><XCircle className="w-4 h-4" /> Wrong answer</>}
+                    </div>
+                  )}
+
+                  <p className="font-semibold text-gray-800 leading-relaxed">{question.question}</p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {question.options.map((opt, i) => {
+                      let cls = "border-2 rounded-xl px-4 py-3 text-sm text-left transition-all flex items-center gap-2.5 ";
+                      if (submitted) {
+                        if (i === question.correctIndex) cls += "bg-green-50 border-green-400 text-green-800 font-medium";
+                        else if (i === selected) cls += "bg-red-50 border-red-400 text-red-700";
+                        else cls += "border-gray-100 text-gray-400";
+                      } else {
+                        cls += selected === i
+                          ? "bg-emerald-50 border-emerald-500 text-emerald-800 font-medium"
+                          : "border-gray-200 text-gray-700 hover:border-emerald-300 hover:bg-emerald-50/50 cursor-pointer";
+                      }
+                      return (
+                        <button key={i} className={cls} onClick={() => !submitted && setSelected(i)}>
+                          <span className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-xs font-bold shrink-0">
+                            {String.fromCharCode(65 + i)}
+                          </span>
+                          {opt}
+                          {submitted && i === question.correctIndex && <CheckCircle2 className="w-4 h-4 text-green-500 ml-auto shrink-0" />}
+                          {submitted && i === selected && i !== question.correctIndex && <XCircle className="w-4 h-4 text-red-500 ml-auto shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {submitted && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+                      <span className="font-semibold">💡 Explanation: </span>{question.explanation}
+                    </div>
+                  )}
+
+                  {!submitted && (
+                    <button
+                      onClick={handleSubmit}
+                      disabled={selected === null}
+                      className="w-full text-white rounded-xl py-3 text-sm font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ background: "linear-gradient(135deg, #10b981, #059669)" }}
+                    >
+                      Submit Answer
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   );
 };
