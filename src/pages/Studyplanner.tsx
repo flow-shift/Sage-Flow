@@ -145,7 +145,8 @@ Format:
       // Auto generate schedule after AI suggestions
       generateScheduleFromSubjects(updated);
     } catch (e: any) {
-      toast({ title: "AI failed", description: "Make sure Firebase AI Logic is enabled", variant: "destructive" });
+      console.error(e);
+      toast({ title: "😕 Couldn't generate AI plan", description: "Please check your internet connection and try again.", variant: "destructive" });
     } finally {
       setAiLoading(false);
     }

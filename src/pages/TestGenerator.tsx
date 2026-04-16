@@ -74,7 +74,7 @@ Format:
       setSubmitted(false);
       setSelected({});
     } catch (e: any) {
-      setError("Failed to generate questions. Make sure Firebase AI Logic is enabled in your Firebase Console.");
+      setError("Couldn't generate questions. Please check your internet connection and try again.");
       console.error(e);
     } finally {
       setLoading(false);
@@ -116,7 +116,14 @@ Format:
             rows={7}
             className="w-full border rounded-lg px-3 py-2 text-sm bg-white dark:bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
           />
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && (
+            <div className="border border-red-200 bg-red-50 rounded-xl p-4 text-center space-y-3">
+              <p className="text-2xl">😕</p>
+              <p className="text-sm font-semibold text-red-700">Couldn't generate questions</p>
+              <p className="text-xs text-red-500">Please check your internet connection and try again.</p>
+              <button onClick={() => setError("")} className="text-xs text-red-600 underline">Dismiss</button>
+            </div>
+          )}
           <div className="flex items-end gap-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Number of questions</label>
