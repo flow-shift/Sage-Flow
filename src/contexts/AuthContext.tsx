@@ -7,6 +7,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendPasswordResetEmail as firebaseSendPasswordReset,
+  sendEmailVerification,
   User as FirebaseUser,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -68,7 +69,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      if (!cred.user.emailVerified) {
+        await signOut(auth);
+        return { success: false, error: "Please verify your email first. Check your inbox." };
+      }
       return { success: true };
     } catch (e: any) {
       const msg = e.code === "auth/invalid-credential" ? "Invalid email or password" : e.message;
@@ -80,7 +85,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
+      await sendEmailVerification(cred.user);
       await saveUserToFirestore({ ...cred.user, displayName: name });
+      await signOut(auth);
       return { success: true };
     } catch (e: any) {
       const msg = e.code === "auth/email-already-in-use" ? "Email already in use" : e.message;
