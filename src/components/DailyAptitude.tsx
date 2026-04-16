@@ -163,7 +163,6 @@ Return ONLY valid JSON, no extra text:
                 </div>
               ) : error ? (
                 <div className="text-center py-6 space-y-4">
-                  <p className="text-4xl">😕</p>
                   <p className="text-gray-700 font-semibold">Couldn't load today's question</p>
                   <p className="text-sm text-gray-400">Please check your internet connection and try again.</p>
                   <div className="flex gap-3">

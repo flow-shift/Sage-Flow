@@ -146,7 +146,7 @@ Format:
       generateScheduleFromSubjects(updated);
     } catch (e: any) {
       console.error(e);
-      toast({ title: "😕 Couldn't generate AI plan", description: "Please check your internet connection and try again.", variant: "destructive" });
+      toast({ title: "Couldn't generate AI plan", description: "Please check your internet connection and try again.", variant: "destructive" });
     } finally {
       setAiLoading(false);
     }

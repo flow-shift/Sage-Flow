@@ -118,7 +118,6 @@ Format:
           />
           {error && (
             <div className="border border-red-200 bg-red-50 rounded-xl p-4 text-center space-y-3">
-              <p className="text-2xl">😕</p>
               <p className="text-sm font-semibold text-red-700">Couldn't generate questions</p>
               <p className="text-xs text-red-500">Please check your internet connection and try again.</p>
               <button onClick={() => setError("")} className="text-xs text-red-600 underline">Dismiss</button>
