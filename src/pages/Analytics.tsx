@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from "recharts";
 
 const COLORS = ["hsl(168,70%,38%)", "hsl(43,96%,56%)", "hsl(262,60%,55%)", "hsl(200,70%,50%)", "hsl(340,65%,55%)"];
 
@@ -95,12 +95,14 @@ const Analytics = () => {
             <p className="text-xs text-muted-foreground mb-4">Last 14 days — click a bar to see the date</p>
             {aptitudeScores.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={aptitudeScores.slice(-14).map((a) => ({ date: a.date.slice(5), result: a.correct ? 1 : 0 }))}>
+                <BarChart data={aptitudeScores.slice(-14).map((a) => ({ date: a.date.slice(5), Correct: a.correct ? 1 : 0, Wrong: a.correct ? 0 : 1 }))}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis allowDecimals={false} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => v === 1 ? "✓" : "✗"} tick={{ fontSize: 12 }} />
-                  <Tooltip formatter={(v) => v === 1 ? "Correct" : "Wrong"} />
-                  <Bar dataKey="result" fill={COLORS[2]} radius={[6, 6, 0, 0]} />
+                  <YAxis allowDecimals={false} domain={[0, 1]} ticks={[0, 1]} tickFormatter={(v) => v === 1 ? "1" : "0"} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="Correct" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="Wrong" fill="#ef4444" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
