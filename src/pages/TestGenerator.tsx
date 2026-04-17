@@ -7,6 +7,7 @@ interface Question {
   question: string;
   options: string[];
   correctIndex: number;
+  explanation: string;
 }
 
 interface TestResult {
@@ -43,6 +44,7 @@ Rules:
 - Each question must have exactly 4 options (A, B, C, D)
 - Only one option is correct
 - Make wrong options plausible but clearly incorrect
+- Add a brief explanation for the correct answer
 - Return ONLY a valid JSON array, no extra text, no markdown
 
 Format:
@@ -50,7 +52,8 @@ Format:
   {
     "question": "question text here",
     "options": ["option A", "option B", "option C", "option D"],
-    "correctIndex": 0
+    "correctIndex": 0,
+    "explanation": "brief explanation why this answer is correct"
   }
 ]`;
 
@@ -67,6 +70,7 @@ Format:
         question: q.question,
         options: q.options,
         correctIndex: q.correctIndex,
+        explanation: q.explanation || "",
       }));
 
       setQuestions(qs);
@@ -183,6 +187,11 @@ Format:
                     );
                   })}
                 </div>
+                {submitted && q.explanation && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-sm text-blue-800">
+                    <span className="font-semibold">Explanation: </span>{q.explanation}
+                  </div>
+                )}
               </div>
             );
           })}
