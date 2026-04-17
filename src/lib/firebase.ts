@@ -17,26 +17,28 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Direct Gemini API using dedicated API key — free tier: 15 req/min, 1500/day
+// Groq API with Gemma 3 27B — free tier: 14400 requests/day, 30/min
 export const gemini = {
   generateContent: async (prompt: string) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-        }),
-      }
-    );
+    const apiKey = import.meta.env.VITE_GROQ_API_KEY;
+    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "gemma2-9b-it",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      }),
+    });
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err?.error?.message || `API error ${res.status}`);
+      throw new Error(err?.error?.message || `Groq API error ${res.status}`);
     }
     const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+    const text = data.choices?.[0]?.message?.content || "";
     return { response: { text: () => text } };
   },
 };
