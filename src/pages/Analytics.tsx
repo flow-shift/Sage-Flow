@@ -35,7 +35,7 @@ const Analytics = () => {
         <p className="text-muted-foreground mt-1">Track your progress and performance.</p>
       </div>
 
-      {tasks.length === 0 && studySchedule.length === 0 ? (
+      {tasks.length === 0 && studySchedule.length === 0 && aptitudeScores.length === 0 ? (
         <div className={`${card} py-12 text-center text-muted-foreground`}>
           No data yet. Add tasks or create a study plan to see analytics.
         </div>
@@ -85,10 +85,15 @@ const Analytics = () => {
             ) : <p className="text-center text-muted-foreground py-8">No study plan yet</p>}
           </div>
 
-          {aptitudeScores.length > 0 && (
-            <div className={`${card} lg:col-span-2`}>
-              <p className="font-medium mb-1">Daily Aptitude Performance</p>
-              <p className="text-xs text-muted-foreground mb-4">{aptitudeScores.filter((a) => a.correct).length} correct out of {aptitudeScores.length} attempts</p>
+          <div className={`${card} lg:col-span-2`}>
+            <div className="flex items-center justify-between mb-1">
+              <p className="font-medium">Daily Aptitude Performance</p>
+              <span className="text-xs font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary">
+                {aptitudeScores.filter((a) => a.correct).length}/{aptitudeScores.length} correct
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">Last 14 days — click a bar to see the date</p>
+            {aptitudeScores.length > 0 ? (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={aptitudeScores.slice(-14).map((a) => ({ date: a.date.slice(5), result: a.correct ? 1 : 0 }))}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -98,8 +103,10 @@ const Analytics = () => {
                   <Bar dataKey="result" fill={COLORS[2]} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          )}
+            ) : (
+              <p className="text-center text-muted-foreground py-8">No aptitude attempts yet. Answer today's challenge!</p>
+            )}
+          </div>
         </div>
       )}
     </div>
