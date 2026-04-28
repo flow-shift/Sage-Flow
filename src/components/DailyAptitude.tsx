@@ -93,11 +93,11 @@ Return ONLY valid JSON, no extra text:
     });
     localStorage.setItem("aptitudeScores", JSON.stringify(scores));
     localStorage.setItem(ANSWERED_KEY, "true");
+    // Don't auto close — user must click X to close
+  };
 
-    setTimeout(() => {
-      setPopupOpen(false);
-      setAnswered(true);
-    }, 3000);
+  const handleSkip = () => {
+    setPopupOpen(false);
   };
 
   // Already answered — show nothing
@@ -145,9 +145,18 @@ Return ONLY valid JSON, no extra text:
               </div>
               {!submitted && (
                 <button
-                  onClick={() => setPopupOpen(false)}
+                  onClick={handleSkip}
                   className="text-white/70 hover:text-white transition-colors"
                   title="Close — banner will remind you"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+              {submitted && (
+                <button
+                  onClick={() => { setPopupOpen(false); setAnswered(true); }}
+                  className="text-white/70 hover:text-white transition-colors"
+                  title="Close"
                 >
                   <X className="w-5 h-5" />
                 </button>
