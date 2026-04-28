@@ -121,7 +121,7 @@ Return ONLY valid JSON, no extra text:
             className="flex items-center gap-2 flex-1 text-left"
           >
             <Sparkles className="w-4 h-4 shrink-0" />
-            <span>📝 Daily Aptitude — Tap to answer today's challenge!</span>
+            <span>Daily Aptitude — Tap to answer today's challenge!</span>
           </button>
         </div>
       )}
@@ -228,7 +228,7 @@ Return ONLY valid JSON, no extra text:
 
                   {submitted && (
                     <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
-                      <span className="font-semibold">💡 Explanation: </span>{question.explanation}
+                      <span className="font-semibold">Explanation: </span>{question.explanation}
                     </div>
                   )}
 

@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { BookOpen, Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
   const { user, signup, signupWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -16,28 +14,29 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [done, setDone] = useState(false);
+  const [error, setError] = useState("");
+  const [googleError, setGoogleError] = useState("");
 
   if (user && !done) return <Navigate to="/dashboard" replace />;
 
   const handleGoogleSignup = async () => {
+    setGoogleError("");
     setGoogleLoading(true);
     const result = await signupWithGoogle();
     setGoogleLoading(false);
     if (result.success) navigate("/dashboard");
-    else toast({ title: "Google sign up failed", description: result.error, variant: "destructive" });
+    else setGoogleError(result.error || "Google sign up failed.");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password.length < 6) {
-      toast({ title: "Weak password", description: "Password must be at least 6 characters", variant: "destructive" });
-      return;
-    }
+    setError("");
+    if (password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     const result = await signup(name, email, password);
     setLoading(false);
     if (result.success) setDone(true);
-    else toast({ title: "Signup failed", description: result.error, variant: "destructive" });
+    else setError(result.error || "Signup failed.");
   };
 
   if (done) return (
@@ -100,6 +99,8 @@ const Signup = () => {
             {googleLoading ? "Connecting..." : "Sign up with Google"}
           </button>
 
+          {googleError && <p className="text-sm text-red-600 text-center">{googleError}</p>}
+
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200" />
@@ -149,6 +150,8 @@ const Signup = () => {
                 </button>
               </div>
             </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <button
               type="submit"

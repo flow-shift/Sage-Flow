@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate, Link, Navigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, BookOpen } from "lucide-react";
 
 const Login = () => {
@@ -10,27 +9,30 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [googleError, setGoogleError] = useState("");
   const { login, loginWithGoogle, user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   if (user) return <Navigate to="/dashboard" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
     const result = await login(email, password);
     setLoading(false);
     if (result.success) navigate("/dashboard");
-    else toast({ title: "Login failed", description: result.error, variant: "destructive" });
+    else setError(result.error || "Login failed.");
   };
 
   const handleGoogleLogin = async () => {
+    setGoogleError("");
     setGoogleLoading(true);
     const result = await loginWithGoogle();
     setGoogleLoading(false);
     if (result.success) navigate("/dashboard");
-    else toast({ title: "Google sign in failed", description: result.error, variant: "destructive" });
+    else setGoogleError(result.error || "Google sign in failed.");
   };
 
   return (
@@ -71,6 +73,8 @@ const Login = () => {
             )}
             {googleLoading ? "Connecting..." : "Login with Google"}
           </button>
+
+          {googleError && <p className="text-sm text-red-600 text-center">{googleError}</p>}
 
           {/* Divider */}
           <div className="flex items-center gap-3">
@@ -117,6 +121,8 @@ const Login = () => {
                 </button>
               </div>
             </div>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <button
               type="submit"

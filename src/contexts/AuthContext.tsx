@@ -147,15 +147,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const deleteAccount = async () => {
     const fb = auth.currentUser;
     if (!fb) return;
-    // Delete Firestore user document
-    await deleteDoc(doc(db, "users", fb.uid));
-    // Clear all localStorage data
-    [
-      "tasks", "studySubjects", "studySchedule", "studyHoursPerDay",
-      "testScores", "flashcards", "aptitudeScores",
-      "pomo_work", "pomo_short", "pomo_long", "pomo_sessions", "pomo_auto",
-      "hasSeenOnboarding",
-    ].forEach((k) => localStorage.removeItem(k));
+    try { await deleteDoc(doc(db, "users", fb.uid)); } catch (e) { console.error("Firestore delete:", e); }
+    // Clear ALL localStorage
+    localStorage.clear();
     // Delete Firebase Auth account
     await deleteUser(fb);
     setUser(null);
