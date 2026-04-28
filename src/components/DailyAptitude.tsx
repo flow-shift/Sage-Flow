@@ -54,21 +54,24 @@ export const DailyAptitude = () => {
 
       const prompt = `Generate one aptitude question on the topic: "${topic}" suitable for competitive exams.
 
-Rules:
-- The question must have exactly one correct answer
-- The correct answer MUST be one of the 4 options
-- correctIndex must point to the actual correct answer in the options array
-- Options must include the correct answer and 3 wrong but plausible answers
-- Double check that options[correctIndex] is actually the correct answer before returning
-- Explanation must correctly explain why options[correctIndex] is the right answer
+IMPORTANT RULES:
+- Generate the question and find the correct answer FIRST
+- Then create 3 wrong options
+- Put all 4 options in an array
+- Set correctIndex to the exact position (0,1,2, or 3) of the correct answer in the array
+- VERIFY: options[correctIndex] must equal the correct answer
+- The explanation must match the correct answer at options[correctIndex]
 
-Return ONLY valid JSON, no extra text:
+Example of correct format:
+If correct answer is 42 and you place it at index 2:
 {
-  "question": "question text here",
-  "options": ["wrong1", "correct answer", "wrong2", "wrong3"],
-  "correctIndex": 1,
-  "explanation": "explanation of why the correct answer is right"
-}`;
+  "question": "What is 6 x 7?",
+  "options": ["36", "48", "42", "54"],
+  "correctIndex": 2,
+  "explanation": "6 x 7 = 42"
+}
+
+Now generate a question on "${topic}". Return ONLY valid JSON, no extra text, no markdown.`;
 
       const result = await gemini.generateContent(prompt);
       const text = result.response.text().trim();
@@ -76,6 +79,12 @@ Return ONLY valid JSON, no extra text:
       if (!jsonMatch) throw new Error("Invalid response");
 
       const q: AptitudeQuestion = JSON.parse(jsonMatch[0]);
+
+      // Validate correctIndex is within bounds
+      if (q.correctIndex < 0 || q.correctIndex >= q.options.length) {
+        q.correctIndex = 0;
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(q));
       setQuestion(q);
       setPopupOpen(true);
