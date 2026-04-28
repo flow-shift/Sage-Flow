@@ -109,7 +109,6 @@ Now generate a question on "${topic}". Return ONLY valid JSON, no extra text, no
     });
     localStorage.setItem("aptitudeScores", JSON.stringify(scores));
     localStorage.setItem(ANSWERED_KEY, "true");
-    // Don't auto close — user must click X to close
   };
 
   const handleSkip = () => {
