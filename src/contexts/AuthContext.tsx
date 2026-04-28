@@ -8,6 +8,7 @@ import {
   updateProfile,
   sendPasswordResetEmail as firebaseSendPasswordReset,
   sendEmailVerification,
+  fetchSignInMethodsForEmail,
   User as FirebaseUser,
 } from "firebase/auth";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
@@ -70,6 +71,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     try {
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+      if (methods.length === 0) {
+        return { success: false, error: "This email is not registered. Please sign up first." };
+      }
       const cred = await signInWithEmailAndPassword(auth, email, password);
       if (!cred.user.emailVerified) {
         await signOut(auth);
@@ -79,8 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: true };
     } catch (e: any) {
       const errors: Record<string, string> = {
-        "auth/invalid-credential": "Invalid email or password.",
-        "auth/user-not-found": "No account found with this email. Please sign up first.",
+        "auth/invalid-credential": "Incorrect password. Please try again.",
         "auth/wrong-password": "Incorrect password. Please try again.",
         "auth/invalid-email": "Please enter a valid email address.",
         "auth/user-disabled": "This account has been disabled.",
@@ -92,6 +96,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signup = async (name: string, email: string, password: string) => {
     try {
+      const methods = await fetchSignInMethodsForEmail(auth, email);
+      if (methods.length > 0) {
+        return { success: false, error: "This email is already registered. Please login instead." };
+      }
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
       await sendEmailVerification(cred.user);
@@ -100,10 +108,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { success: true };
     } catch (e: any) {
       const errors: Record<string, string> = {
-        "auth/email-already-in-use": "An account with this email already exists. Please login instead.",
+        "auth/email-already-in-use": "This email is already registered. Please login instead.",
         "auth/invalid-email": "Please enter a valid email address.",
         "auth/weak-password": "Password must be at least 6 characters.",
-        "auth/operation-not-allowed": "Email/password sign up is not enabled.",
       };
       return { success: false, error: errors[e.code] || "Signup failed. Please try again." };
     }
