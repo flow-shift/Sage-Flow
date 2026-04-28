@@ -3,8 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, User, Moon, Sun, Download, Upload, Eye, EyeOff } from "lucide-react";
-import { reauthenticateWithCredential, EmailAuthProvider, reauthenticateWithPopup } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const Settings = () => {
   const { user, logout, deleteAccount } = useAuth();
@@ -67,10 +67,7 @@ const Settings = () => {
     try {
       const fb = auth.currentUser;
       if (!fb) return;
-      // Re-authenticate before deleting
-      if (isGoogleUser) {
-        await reauthenticateWithPopup(fb, googleProvider);
-      } else {
+      if (!isGoogleUser) {
         if (!password) {
           toast({ title: "Please enter your password", variant: "destructive" });
           setDeleting(false);
