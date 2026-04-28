@@ -48,14 +48,15 @@ const toUser = (fb: FirebaseUser): User => ({
 });
 
 const saveUserToFirestore = async (fb: FirebaseUser) => {
-  const ref = doc(db, "users", fb.uid);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) {
+  try {
+    const ref = doc(db, "users", fb.uid);
     await setDoc(ref, {
       name: fb.displayName || fb.email?.split("@")[0] || "User",
       email: fb.email,
       createdAt: serverTimestamp(),
-    });
+    }, { merge: true });
+  } catch (e) {
+    console.error("Firestore save error:", e);
   }
 };
 
