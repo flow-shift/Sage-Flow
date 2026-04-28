@@ -52,15 +52,22 @@ export const DailyAptitude = () => {
       ];
       const topic = topics[new Date().getDate() % topics.length];
 
-      const prompt = `Generate one aptitude question on the topic: "${topic}".
-The question should be suitable for competitive exams.
+      const prompt = `Generate one aptitude question on the topic: "${topic}" suitable for competitive exams.
+
+Rules:
+- The question must have exactly one correct answer
+- The correct answer MUST be one of the 4 options
+- correctIndex must point to the actual correct answer in the options array
+- Options must include the correct answer and 3 wrong but plausible answers
+- Double check that options[correctIndex] is actually the correct answer before returning
+- Explanation must correctly explain why options[correctIndex] is the right answer
 
 Return ONLY valid JSON, no extra text:
 {
   "question": "question text here",
-  "options": ["option A", "option B", "option C", "option D"],
-  "correctIndex": 0,
-  "explanation": "brief explanation of the answer"
+  "options": ["wrong1", "correct answer", "wrong2", "wrong3"],
+  "correctIndex": 1,
+  "explanation": "explanation of why the correct answer is right"
 }`;
 
       const result = await gemini.generateContent(prompt);
