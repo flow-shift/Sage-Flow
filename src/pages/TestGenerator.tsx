@@ -60,8 +60,11 @@ Format:
       const result = await gemini.generateContent(prompt);
       const text = result.response.text().trim();
 
-      // Extract JSON from response
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      // Handle markdown code blocks
+      let jsonStr = text;
+      const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlock) jsonStr = codeBlock[1].trim();
+      const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("Invalid response format");
 
       const parsed = JSON.parse(jsonMatch[0]);

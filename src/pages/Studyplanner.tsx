@@ -121,7 +121,10 @@ Format:
 
       const result = await gemini.generateContent(prompt);
       const text = result.response.text().trim();
-      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      let jsonStr = text;
+      const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (codeBlock) jsonStr = codeBlock[1].trim();
+      const jsonMatch = jsonStr.match(/\[[\s\S]*\]/);
       if (!jsonMatch) throw new Error("Invalid response");
 
       const suggestions: { subject: string; topic: string; hours: number }[] = JSON.parse(jsonMatch[0]);
