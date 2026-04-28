@@ -3,8 +3,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, User, Moon, Sun, Download, Upload, Eye, EyeOff } from "lucide-react";
-import { reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { reauthenticateWithCredential, EmailAuthProvider, reauthenticateWithPopup } from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
 
 const Settings = () => {
   const { user, logout, deleteAccount } = useAuth();
@@ -67,7 +67,9 @@ const Settings = () => {
     try {
       const fb = auth.currentUser;
       if (!fb) return;
-      if (!isGoogleUser) {
+      if (isGoogleUser) {
+        await reauthenticateWithPopup(fb, googleProvider);
+      } else {
         if (!password) {
           toast({ title: "Please enter your password", variant: "destructive" });
           setDeleting(false);
@@ -81,7 +83,7 @@ const Settings = () => {
     } catch (e: any) {
       if (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") {
         toast({ title: "Incorrect password", variant: "destructive" });
-      } else {
+      } else if (e.code !== "auth/popup-closed-by-user") {
         toast({ title: "Failed to delete account. Please try again.", variant: "destructive" });
       }
     } finally {
@@ -153,8 +155,11 @@ const Settings = () => {
       {showConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card border rounded-xl p-6 max-w-sm w-full space-y-4">
-            <h3 className="font-semibold text-lg">Are you absolutely sure?</h3>
+            <h3 className="font-semibold text-lg">Delete Account</h3>
             <p className="text-sm text-muted-foreground">This will permanently delete your account, all tasks, study plans, test scores, and flashcards. This cannot be undone.</p>
+            {isGoogleUser && (
+              <p className="text-sm text-blue-600 bg-blue-50 rounded-lg px-3 py-2">You will be asked to verify your Google account to confirm deletion.</p>
+            )}
             {!isGoogleUser && (
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Enter your password to confirm</label>
