@@ -45,11 +45,20 @@ export const DailyAptitude = () => {
     setLoading(true);
     try {
       const topics = [
-        "analogies", "synonyms and antonyms", "sentence completion",
-        "blood relations", "direction sense", "coding decoding",
-        "syllogisms", "logical reasoning", "odd one out",
-        "seating arrangement", "ranking and order", "calendar",
-        "clocks", "ages", "profit and loss",
+        "analogies",
+        "blood relations",
+        "direction sense",
+        "coding decoding",
+        "syllogisms",
+        "odd one out",
+        "seating arrangement",
+        "ranking and order",
+        "logical reasoning",
+        "sentence completion",
+        "synonyms and antonyms",
+        "statement and conclusion",
+        "cause and effect",
+        "figure classification",
       ];
       const topic = topics[new Date().getDate() % topics.length];
 
