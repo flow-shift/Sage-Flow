@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, User, Moon, Sun, Download, Upload } from "lucide-react";
 
 const Settings = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [darkMode, setDarkMode] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -55,11 +56,18 @@ const Settings = () => {
     reader.readAsText(file);
   };
 
-  const handleDeleteAccount = () => {
-    ["tasks", "studySubjects", "studySchedule", "studyHoursPerDay", "testScores", "flashcards",
-      "pomo_work", "pomo_short", "pomo_long", "pomo_sessions", "pomo_auto"].forEach((k) => localStorage.removeItem(k));
-    logout();
-    navigate("/login");
+  const handleDeleteAccount = async () => {
+    try {
+      await deleteAccount();
+      navigate("/login");
+    } catch (e: any) {
+      // If token expired, re-login required
+      if (e.code === "auth/requires-recent-login") {
+        toast({ title: "Please log out and log back in before deleting your account.", variant: "destructive" });
+      } else {
+        toast({ title: "Failed to delete account", variant: "destructive" });
+      }
+    }
   };
 
   const section = "border rounded-xl p-5 bg-card shadow-sm space-y-4";

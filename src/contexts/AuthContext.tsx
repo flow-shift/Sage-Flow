@@ -9,9 +9,10 @@ import {
   sendPasswordResetEmail as firebaseSendPasswordReset,
   sendEmailVerification,
   fetchSignInMethodsForEmail,
+  deleteUser,
   User as FirebaseUser,
 } from "firebase/auth";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db, googleProvider } from "@/lib/firebase";
 
 interface User {
@@ -26,6 +27,7 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   loginWithGoogle: () => Promise<{ success: boolean; error?: string }>;
   signupWithGoogle: () => Promise<{ success: boolean; error?: string }>;
+  deleteAccount: () => Promise<void>;
   logout: () => void;
   sendPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
   isLoading: boolean;
@@ -146,6 +148,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const deleteAccount = async () => {
+    const fb = auth.currentUser;
+    if (!fb) return;
+    // Delete Firestore user document
+    await deleteDoc(doc(db, "users", fb.uid));
+    // Clear all localStorage data
+    [
+      "tasks", "studySubjects", "studySchedule", "studyHoursPerDay",
+      "testScores", "flashcards", "aptitudeScores",
+      "pomo_work", "pomo_short", "pomo_long", "pomo_sessions", "pomo_auto",
+      "hasSeenOnboarding",
+    ].forEach((k) => localStorage.removeItem(k));
+    // Delete Firebase Auth account
+    await deleteUser(fb);
+    setUser(null);
+  };
+
   const logout = () => signOut(auth);
 
   const sendPasswordReset = async (email: string) => {
@@ -158,7 +177,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, signupWithGoogle, logout, sendPasswordReset, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, loginWithGoogle, signupWithGoogle, logout, deleteAccount, sendPasswordReset, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
