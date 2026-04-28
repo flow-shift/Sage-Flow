@@ -85,6 +85,16 @@ Now generate a question on "${topic}". Return ONLY valid JSON, no extra text, no
         q.correctIndex = 0;
       }
 
+      // Cross-check: find which option appears in the explanation
+      // This fixes cases where AI sets wrong correctIndex
+      const explanationLower = q.explanation.toLowerCase();
+      const betterIndex = q.options.findIndex((opt) =>
+        explanationLower.includes(opt.toString().toLowerCase().trim())
+      );
+      if (betterIndex !== -1 && betterIndex !== q.correctIndex) {
+        q.correctIndex = betterIndex;
+      }
+
       localStorage.setItem(STORAGE_KEY, JSON.stringify(q));
       setQuestion(q);
       setPopupOpen(true);
