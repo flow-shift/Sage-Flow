@@ -45,33 +45,33 @@ export const DailyAptitude = () => {
     setLoading(true);
     try {
       const topics = [
-        "number series", "percentage", "profit and loss", "time and work",
-        "speed distance time", "ratio and proportion", "probability",
-        "logical reasoning", "data interpretation", "coding decoding",
-        "blood relations", "direction sense", "analogies", "syllogisms",
+        "analogies", "synonyms and antonyms", "sentence completion",
+        "blood relations", "direction sense", "coding decoding",
+        "syllogisms", "logical reasoning", "odd one out",
+        "seating arrangement", "ranking and order", "calendar",
+        "clocks", "ages", "profit and loss",
       ];
       const topic = topics[new Date().getDate() % topics.length];
 
       const prompt = `Generate one aptitude question on the topic: "${topic}" suitable for competitive exams.
 
-IMPORTANT RULES:
-- Generate the question and find the correct answer FIRST
-- Then create 3 wrong options
-- Put all 4 options in an array
-- Set correctIndex to the exact position (0,1,2, or 3) of the correct answer in the array
-- VERIFY: options[correctIndex] must equal the correct answer
-- The explanation must match the correct answer at options[correctIndex]
+STRICT RULES:
+- Generate the question and solve it yourself first to get the correct answer
+- The correct answer MUST be placed at options[correctIndex]
+- Verify: options[correctIndex] === correct answer before returning
+- The explanation must state the correct answer and it must match options[correctIndex]
+- Do NOT include number series or arithmetic sequence questions
+- Avoid questions requiring complex calculations
 
-Example of correct format:
-If correct answer is 42 and you place it at index 2:
+Example:
 {
-  "question": "What is 6 x 7?",
-  "options": ["36", "48", "42", "54"],
-  "correctIndex": 2,
-  "explanation": "6 x 7 = 42"
+  "question": "If A is the brother of B, B is the sister of C, then A is the ___ of C?",
+  "options": ["Sister", "Brother", "Father", "Mother"],
+  "correctIndex": 1,
+  "explanation": "A is male (brother of B), so A is the brother of C. Answer: Brother which is at index 1."
 }
 
-Now generate a question on "${topic}". Return ONLY valid JSON, no extra text, no markdown.`;
+Generate a question on "${topic}". Return ONLY valid JSON, no markdown, no extra text.`;
 
       const result = await gemini.generateContent(prompt);
       const text = result.response.text().trim();
